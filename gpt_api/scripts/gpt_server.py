@@ -14,11 +14,15 @@ def gpt_ask(req):
     question = req.question
     rospy.loginfo(f"[GPT] Received question: {question}")
 
+    ## Prompt design ##
+    prompt = f"Solve the following math problem and return \
+               only the integer answer without explanation: {question}"
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "user", "content": question}
+                {"role": "user", "content": prompt}
             ],
             temperature=0.5
         )
