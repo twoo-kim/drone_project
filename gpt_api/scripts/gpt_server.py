@@ -8,23 +8,26 @@ from openai import OpenAI
 # Initialize OpenAI API
 client = OpenAI(
     api_key = os.environ.get("OPENAI_API_KEY"),
+    organization = os.environ.get("ORGANIZATION_KEY")
 )
+gpt_model = "gpt-4o"
+max_tokens = 300
 
 def gpt_ask(req):
     question = req.question
     rospy.loginfo(f"[GPT] Received question: {question}")
 
     ## Prompt design ##
-    prompt = f"Solve the following math problem and return \
-               only the integer answer without explanation: {question}"
+    prompt = f"Reply only the corresponding LEFT or RIGHT of the answer: {question}"
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=gpt_model,
             messages=[
+                {"role": "system","content": "Forget the previous conversation."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5
+            max_tokens = max_tokens,
         )
         answer = response.choices[0].message.content.strip()
         rospy.loginfo(f"[GPT] Answer: {answer}")
