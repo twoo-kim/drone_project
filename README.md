@@ -15,6 +15,7 @@ EE478 term project
 
 4. 수정한 부분이나 개선할 부분이 있으면 source code 또는 Readme.md에 적어주세요 
 
+CMakeLists.txt도 고쳐야 합니다
 
 ## Installation
 ```
