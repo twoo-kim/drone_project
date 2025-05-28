@@ -1,0 +1,16 @@
+<launch>
+  <arg name="imu_topic" value="/mavros/imu/data" />
+  <arg name="orb_topic" value="/orb_slam3/map_pose"/>
+  <arg name="tag_topic" value="/apriltag_tf/cam_pose"/>
+
+  <!-- apriltag transform -->
+  <node pkg="apriltag_tf" name="apriltag_tf_node" type="apriltag_tf_node" output="screen">
+
+  <!-- main node -->
+  <node pkg="ekf_fusion" name="ekf_node" type="ekf_node" output="screen">
+    <remap from="/imu_topic" to="$(arg imu_topic)"/>
+    <remap from="/orb_pose" to="$(arg orb_topic)"/>
+    <remap from="/tag_pose" to="$(arg tag_topic)"/>
+  </node>
+
+</launch>
