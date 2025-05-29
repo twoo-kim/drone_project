@@ -5,10 +5,10 @@ void AprilTagTF::init(ros::NodeHandle& nh) {
 
     /* Store ground truth value of apriltags */
     gate_pairs_ = {
-        {{6.1844, -2.8156, 0.75}, {0.9239, 0, 0, -0.3827}}, // id 0; pair0
-        {{13.8156, -2.8156, 0.75}, {0.9239, 0, 0, 0.3827}}, // id 4; pair1
-        {{13.8156, 2.8156, 0.75}, {0.9239, 0, 0, 0.3827}},  // id 8; pair2
-        {{3.8156, 2.8156, 0.75}, {0.9239, 0, 0, -0.3827}}   // id 12; pair3
+        {{6.1314, -2.7626, 0.75}, {0.9239, 0, 0, -0.3827}}, // id 0; pair0
+        {{13.7626, -2.8686, 0.75}, {0.9239, 0, 0, 0.3827}}, // id 4; pair1
+        {{13.8686, 2.7626, 0.75}, {0.9239, 0, 0, 0.3827}},  // id 8; pair2
+        {{6.2374, 2.8686, 0.75}, {0.9239, 0, 0, -0.3827}}   // id 12; pair3
     };
 
     // Initialize subscribers
@@ -20,40 +20,49 @@ void AprilTagTF::init(ros::NodeHandle& nh) {
 
 /* AprilTag pose transformation callback function */
 void AprilTagTF::aprilCallback(const apriltag_ros::AprilTagDetectionArray::ConstPtr& tag_array) {
-    // Lie algebra for average; suppose estimations are close enough
-    Eigen::Matrix<double, 6, 1> lie = Eigen::Matrix<double, 6, 1>::Zero();
-    double n = 0.0;
+    // Minimum distance and number of detections
+    double min_dist = std::numeric_limits<double>::infinity();
+    int n = 0;
+    // Result
+    Eigen::Vector3d p_wc_world = Eigen::Vector3d::Zero();
+    Eigen::Quaterniond q_wc_world = Eigen::Quaterniond::Identity();
 
     /* Look over the detections array */
+    // Notation p_wt_world: pose of tag in world frame with axis configuration of the world frame    
     for (const auto& detection : tag_array->detections) {
-        // ID; we set the minimum id tag as the bundle frame
+        // ID; we set the minimum id tag as the bundle frame (already sorted)
         int id = detection.id[0];
-        Sophus::SE3d T_wt(gate_pairs_[id/4].second, gate_pairs_[id/4].first);
+        Eigen::Vector3d p_wt_world = gate_pairs_[id/4].first;
+        Eigen::Quaterniond q_wt_world = gate_pairs_[id/4].second;
 
         // Pose; pose of the tag with respect to the camera link
         const geometry_msgs::Pose pose = detection.pose.pose.pose;
-        Eigen::Vector3d p_ct(pose.position.x, pose.position.y, pose.position.z);
-        Eigen::Quaterniond q_ct(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
-        Sophus::SE3d T_ct_cam(q_ct, p_ct); // In camera frame configuration
+        Eigen::Vector3d p_ct_cam(pose.position.x, pose.position.y, pose.position.z);
+        Eigen::Quaterniond q_ct_cam(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
 
-        // Note that camera frame has different configuration with that of the world frame
-        Eigen::Matrix4d T_conv;
-        T_conv << 0, 0, 1, 0,
-                 -1, 0, 0, 0,
-                  0,-1, 0, 0,
-                  0, 0, 0, 1;
+        // Check if the detected gate is the closest gate, else skip
+        double current_dist = p_ct_cam.norm();
+        if (current_dist > min_dist) {
+            continue;
+        }
+        min_dist = current_dist;
+
+        // Convert camera frame into the world frame
+        Eigen::Matrix3d R_wc;
+        R_wc << 0,  0,  1,
+               -1,  0,  0,
+                0, -1,  0;
+        Eigen::Vector3d p_ct_world = R_wc * p_ct_cam;
+        Eigen::Quaterniond q_ct_world(R_wc * q_ct_cam.toRotationMatrix());
         
-        Sophus::SE3d T_ct(T_conv * T_ct_cam.matrix());
-
-        // Camera pose in the world frame; T_wc = T_wt * T_tc (= T_ct^-1)
-        Sophus::SE3d T_wc;
-        T_wc = T_wt * T_ct.inverse();
-        lie += T_wc.log();
+        // Find the camera pose in world frame
+        p_wc_world = p_wt_world - p_ct_world;
+        q_wc_world = Eigen::Quaterniond(q_wt_world.toRotationMatrix() * q_ct_world.toRotationMatrix().transpose());
         n++;
     }
 
     // Assert if there's no pose
-    if (n < 1e-8) {
+    if (n <= 0) {
         ROS_WARN("No pose received!");
         return;
     }
@@ -63,17 +72,13 @@ void AprilTagTF::aprilCallback(const apriltag_ros::AprilTagDetectionArray::Const
     cam_pose.header.frame_id = "map";
     cam_pose.header.stamp = ros::Time::now();
     
-    Sophus::SE3d avg_pose = Sophus::SE3d::exp(lie/n);
-    Eigen::Vector3d avg_p = avg_pose.translation();
-    Eigen::Quaterniond avg_q = avg_pose.unit_quaternion();
-    
-    cam_pose.pose.position.x = avg_p.x();
-    cam_pose.pose.position.y = avg_p.y();
-    cam_pose.pose.position.z = avg_p.z();
-    cam_pose.pose.orientation.w = avg_q.w();
-    cam_pose.pose.orientation.x = avg_q.x();
-    cam_pose.pose.orientation.y = avg_q.y();
-    cam_pose.pose.orientation.z = avg_q.z();
+    cam_pose.pose.position.x = p_wc_world.x();
+    cam_pose.pose.position.y = p_wc_world.y();
+    cam_pose.pose.position.z = p_wc_world.z();
+    cam_pose.pose.orientation.w = q_wc_world.w();
+    cam_pose.pose.orientation.x = q_wc_world.x();
+    cam_pose.pose.orientation.y = q_wc_world.y();
+    cam_pose.pose.orientation.z = q_wc_world.z();
 
     pose_pub_.publish(cam_pose);
 }

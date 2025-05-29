@@ -6,6 +6,7 @@
 #include <sophus/se3.hpp>
 #include <vector>
 #include <utility>
+#include <limits>
 
 #include "apriltag_ros/AprilTagDetection.h"
 #include "apriltag_ros/AprilTagDetectionArray.h"
