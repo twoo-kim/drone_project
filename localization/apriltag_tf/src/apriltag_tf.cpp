@@ -5,10 +5,10 @@ void AprilTagTF::init(ros::NodeHandle& nh) {
 
     /* Store ground truth value of apriltags */
     gate_pairs_ = {
-        {{6.1314, -2.7626, 0.75}, {0.9239, 0, 0, -0.3827}}, // id 0; pair0
-        {{13.7626, -2.8686, 0.75}, {0.9239, 0, 0, 0.3827}}, // id 4; pair1
-        {{13.8686, 2.7626, 0.75}, {0.9239, 0, 0, 0.3827}},  // id 8; pair2
-        {{6.2374, 2.8686, 0.75}, {0.9239, 0, 0, -0.3827}}   // id 12; pair3
+        {{6.1314, -2.7626, 0.75}, {0.270598, 0.270598, -0.6532815, -0.6532815}}, // id 0; pair0
+        {{13.7626, -2.8686, 0.75}, {0.6532815, 0.6532815, -0.270598, -0.270598}}, // id 4; pair1
+        {{13.8686, 2.7626, 0.75}, {0.6532815, 0.6532815, 0.270598, 0.270598}},  // id 8; pair2
+        {{6.2374, 2.8686, 0.75}, {0.270598, 0.270598, 0.6532815, 0.6532815}}   // id 12; pair3
     };
 
     // Initialize subscribers
@@ -24,40 +24,41 @@ void AprilTagTF::aprilCallback(const apriltag_ros::AprilTagDetectionArray::Const
     double min_dist = std::numeric_limits<double>::infinity();
     int n = 0;
     // Result
-    Eigen::Vector3d p_wc_world = Eigen::Vector3d::Zero();
-    Eigen::Quaterniond q_wc_world = Eigen::Quaterniond::Identity();
+    Eigen::Vector3d p_wc = Eigen::Vector3d::Zero();
+    Eigen::Quaterniond q_wc = Eigen::Quaterniond::Identity();
 
     /* Look over the detections array */
-    // Notation p_wt_world: pose of tag in world frame with axis configuration of the world frame    
     for (const auto& detection : tag_array->detections) {
         // ID; we set the minimum id tag as the bundle frame (already sorted)
         int id = detection.id[0];
-        Eigen::Vector3d p_wt_world = gate_pairs_[id/4].first;
-        Eigen::Quaterniond q_wt_world = gate_pairs_[id/4].second;
+        Eigen::Vector3d p_wt = gate_pairs_[id/4].first;
+        Eigen::Quaterniond q_wt = gate_pairs_[id/4].second;
+        Sophus::SE3d T_wt(q_wt, p_wt);
 
         // Pose; pose of the tag with respect to the camera link
         const geometry_msgs::Pose pose = detection.pose.pose.pose;
-        Eigen::Vector3d p_ct_cam(pose.position.x, pose.position.y, pose.position.z);
-        Eigen::Quaterniond q_ct_cam(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        Eigen::Vector3d p_ct(pose.position.x, pose.position.y, pose.position.z);
+        Eigen::Quaterniond q_ct(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        Sophus::SE3d T_ct(q_ct, p_ct);
 
         // Check if the detected gate is the closest gate, else skip
-        double current_dist = p_ct_cam.norm();
+        double current_dist = p_ct.norm();
         if (current_dist > min_dist) {
             continue;
         }
         min_dist = current_dist;
 
-        // Convert camera frame into the world frame
-        Eigen::Matrix3d R_wc;
-        R_wc << 0,  0,  1,
-               -1,  0,  0,
-                0, -1,  0;
-        Eigen::Vector3d p_ct_world = R_wc * p_ct_cam;
-        Eigen::Quaterniond q_ct_world(R_wc * q_ct_cam.toRotationMatrix());
+        Eigen::Matrix3d R;
+        R <<  0,  0, 1,
+             -1,  0, 0,
+              0, -1, 0;
+        
+        Sophus::SE3d T_conv(R, Eigen::Vector3d::Zero());
         
         // Find the camera pose in world frame
-        p_wc_world = p_wt_world - p_ct_world;
-        q_wc_world = Eigen::Quaterniond(q_wt_world.toRotationMatrix() * q_ct_world.toRotationMatrix().transpose());
+        Sophus::SE3d T_wc = T_wt * T_ct.inverse() * T_conv.inverse();
+        p_wc = T_wc.translation();
+        q_wc = T_wc.so3().unit_quaternion();
         n++;
     }
 
@@ -72,13 +73,13 @@ void AprilTagTF::aprilCallback(const apriltag_ros::AprilTagDetectionArray::Const
     cam_pose.header.frame_id = "map";
     cam_pose.header.stamp = ros::Time::now();
     
-    cam_pose.pose.position.x = p_wc_world.x();
-    cam_pose.pose.position.y = p_wc_world.y();
-    cam_pose.pose.position.z = p_wc_world.z();
-    cam_pose.pose.orientation.w = q_wc_world.w();
-    cam_pose.pose.orientation.x = q_wc_world.x();
-    cam_pose.pose.orientation.y = q_wc_world.y();
-    cam_pose.pose.orientation.z = q_wc_world.z();
+    cam_pose.pose.position.x = p_wc.x();
+    cam_pose.pose.position.y = p_wc.y();
+    cam_pose.pose.position.z = p_wc.z();
+    cam_pose.pose.orientation.w = q_wc.w();
+    cam_pose.pose.orientation.x = q_wc.x();
+    cam_pose.pose.orientation.y = q_wc.y();
+    cam_pose.pose.orientation.z = q_wc.z();
 
     pose_pub_.publish(cam_pose);
 }
