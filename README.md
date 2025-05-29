@@ -23,7 +23,7 @@ EE478 term project
     IMU 센서로 위치를 추정하고 ORB, AprilTag가 들어올 때 조정할 수 있게
     만들었습니다. (AprilTag frame 기준을 map으로 보기때문에 수정하거나 무시)
 
-    아직 테스트는 안해봤습니다. CMakeLists.txt, package.xml 수정해야합니다
+    실행은 되는데 위치가 이상하게 나오네요 transform 생각해서 apriltag_tf.cpp 수정 필요
 
 
 3. Goal publish

@@ -11,6 +11,10 @@
     <remap from="/imu_topic" to="$(arg imu_topic)"/>
     <remap from="/orb_pose" to="$(arg orb_topic)"/>
     <remap from="/tag_pose" to="$(arg tag_topic)"/>
+
+    <param name="ekf/process_covariance"  value="0.01" />
+    <param name="ekf/orb_covariance"      value="0.15" />
+    <param name="ekf/tag_covariance"      value="0.01" />
   </node>
 
 </launch>

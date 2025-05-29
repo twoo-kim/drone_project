@@ -12,9 +12,9 @@
 
 class EKFNode {
 public:
-    EKFNode() {};
+    EKFNode() {}
 
-    void init(ros::NodeHandles& nh);
+    void init(ros::NodeHandle& nh);
 
 private:
     /* Callback functions */
@@ -25,15 +25,13 @@ private:
     
     /* EKF estimation */
     EKF ekf_;
-    double prev_time;
+    double prev_time_;
+    double orb_cov_, tag_cov_;
 
     /* ROS */
-    ros::NodeHandle& nh_;
-    ros::Subscriber imu_sub, orb_sub_, tag_sub_;
+    ros::NodeHandle nh_;
+    ros::Subscriber imu_sub_, orb_sub_, tag_sub_;
     ros::Publisher pose_pub_;
-}
-
-
-
+};
 
 #endif
