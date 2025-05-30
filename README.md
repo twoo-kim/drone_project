@@ -10,10 +10,12 @@ EE478 term project
     ground truth알고 있으므로 LEFT, RIGHT에 대해 최적화 경로 고려
 
 3. Localization  
-    p_wc, R_wc를 frame에 맞게 변환 후 publish  
-    EKF; covariance에 따라 imu prediction 수정
-
-    origin에서 기준 tag위치 (-0.075, 1.675, 0) 반영하여 ground truth 수정 완료
+    origin에서 기준 tag위치 (-0.075, 1.675, 0) 반영하여 ground truth 수정 완료  
+    groun truth orientation도 알맞게 수정함
+    
+    이전 commit기준 orientation이 이상하게 나와서 다시 수정  
+    초기에 나오는 큰 오류는 tag를 제대로 읽지 못해서 운행함에 따라 정확한 값을 보임
+    Transformation을 적용하면 제대로 값이 나옴 (오해가 있었음)
 
     ORB랑 같이 EKF test 예정
 
