@@ -27,11 +27,23 @@ EE478 term project
 
     ORB, AprilTag, ekf_launch 실행 후 ekf_error 실행하여 오차 확인 가능합니다  
     covariance 조정 필요  
+    
+    ORB: 초기에만 좋음 / AprilTag: 초기에만 나쁨 진행하면서 ground truth에 매우 가까워짐  
+    현재 ORB가 tracking을 잃으면 error에 비례하여 covariance를 조정하도록 했습니다  
+    만약 tracking을 잃지 않더라도 Takeoff + AprilTage detection 이후 AprilTag와 차이가 매우 커지면 covariance를 조정해도 좋을 것 같네요  
+
+    ekf_error 로 확인해본 결과 안정적으로 가려면 속도를 적당히 조절해야할 것 같습니다  
+    또한, 아직 직접 조종해서인지 모르겠지만 gate를 통과할 때 AprilTag, ORB 모두 잃어버리는 경우가 생깁니다. IMU로 되긴 하겠지만 천천히 가야할 것 같네요 에러가 많이 커집니다.  
+    
+    (position error, orientation error)  
+    안정적일 때: 0.2~0.6,  0.05 ~ 0.2   
+    시작, line 상에서 빠르게 움직일 때: 0.5 ~ 1.5,   
+    Gate에서 모두 잃었을 때: 1.0 ~ 6.0,   
 
 
 현재 localization 조정 및 전체적인 코드 작동 확인을 해야할 것 같습니다  
 아직 완전히 돌려본 건 아니라서 수정이 좀 필요합니다.  
-시간나시면 covariance 조정 및 전체 작동 확인 부탁드립니다
+시간나시면 covariance 조정 및 controller 수정 부탁드립니다
 
 수정한 부분이나 개선할 부분이 있으면 source code 또는 Readme.md에 적어주세요 
 
@@ -40,6 +52,7 @@ AprilTag는 추가로 첨부한 tag.yaml 파일 복사해서 실행
 ORB는 시뮬레이션 yaml로 조정 후 실행
 GPT API의 경우 공용 key가 현재 막혀있는 듯함
 
+Manual run
 ```
 roslaunch ee478_px4_sim tag_spawn.launch
 
@@ -49,7 +62,17 @@ roslaunch ekf_fusion ekf_node.launch
 
 roslaunch qr_detector detector.launch
 roslaunch gpt_api goal_selector.launch
-roslaunch offboard_control plan_control.launch
+roslaunch control plan_control.launch
 ```
 
+Automate
+```
+tmuxp load ee478.yaml
+```
+Close each terminal or kill all
+```
+exit
+
+tmux kill-server
+```
 

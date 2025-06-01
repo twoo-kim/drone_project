@@ -2,6 +2,7 @@
   <arg name="imu_topic" value="/mavros/imu/data" />
   <arg name="orb_topic" value="/orb_slam3/map_pose"/>
   <arg name="tag_topic" value="/cam_pose"/>
+  <arg name="keypoint_topic" value = "/orb_slam3/tracked_key_points"/>
 
   <!-- apriltag transform -->
   <node pkg="apriltag_tf" name="apriltag_tf_node" type="apriltag_tf_node" output="screen"/>
@@ -11,10 +12,13 @@
     <remap from="/imu_topic" to="$(arg imu_topic)"/>
     <remap from="/orb_pose" to="$(arg orb_topic)"/>
     <remap from="/tag_pose" to="$(arg tag_topic)"/>
+    <remap from="/keypoints" to="$(arg keypoint_topic)"/>
 
-    <param name="ekf/process_covariance"  value="0.01" />
-    <param name="ekf/orb_covariance"      value="0.05" />
-    <param name="ekf/tag_covariance"      value="0.15" />
+    <param name="ekf/process_covariance"      value="0.01" />
+    <param name="ekf/orb_covariance"          value="0.05" />
+    <param name="ekf/tag_covariance"          value="0.01" />
+
+    <param name="ekf/orb_refactor_threshold"  value="1.5" />
   </node>
 
 </launch>
