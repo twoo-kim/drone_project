@@ -2,7 +2,7 @@
   <arg name="pose_topic"      value="/ekf_node/ekf_pose" />
 
   <!-- Route Planner node -->
-  <node pkg="offboard_control" name="route_planner" type="route_planner.py" output="screen">
+  <node pkg="control" name="route_planner" type="route_planner.py" output="screen">
     <remap from="/pose_topic" to="$(arg pose_topic)"/>
 
     <param name="Z_tag"                 value="0.70" />
@@ -13,7 +13,7 @@
   </node>
 
   <!-- main node -->
-  <node pkg="offboard_control" name="velocity_control" type="velocity_control.py" output="screen">
+  <node pkg="control" name="velocity_control" type="velocity_control.py" output="screen">
     <remap from="/pose_topic" to="$(arg pose_topic)"/>
     <param name="Z_tag"     value="0.70" />
   </node>
