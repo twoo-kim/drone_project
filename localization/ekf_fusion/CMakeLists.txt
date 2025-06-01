@@ -32,11 +32,12 @@ include_directories(
 )
 
 ## Declare a C++ executable
-add_executable(${PROJECT_NAME}_node
+add_executable(ekf_node
   src/ekf_node.cpp
+  src/ekf_so3.cpp
   src/ekf.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(ekf_node
   ${catkin_LIBRARIES}
 )

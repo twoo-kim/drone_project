@@ -1,5 +1,5 @@
-#ifndef EKF_NODE_HPP
-#define EKF_NODE_HPP
+#ifndef EKF_SO3_HPP
+#define EKF_SO3_HPP
 
 #include <ros/ros.h>
 #include <Eigen/Dense>

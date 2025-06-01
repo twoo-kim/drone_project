@@ -6,6 +6,8 @@ EE478 term project
     현재 pose 및 gpt답에 따라서 알맞은 gate와 방향 선택
     string으로 LEFT, RIGHT publish할 예정
 
+    web search 다른 종류의 API를 사용해야 해서 구조도 달라지네요 상황보고 적용해야할 것 같습니다
+
 2. Controller  
     ground truth알고 있으므로 LEFT, RIGHT에 대해 최적화 경로 고려
 
@@ -20,4 +22,5 @@ EE478 term project
     ORB랑 같이 EKF test 예정
 
 
+Contributor가 되면 권한이 생기는줄 알았어요. push권한 부여했습니다
 수정한 부분이나 개선할 부분이 있으면 source code 또는 Readme.md에 적어주세요 
