@@ -38,6 +38,14 @@ add_executable(ekf_node
   src/ekf.cpp
 )
 
+add_executable(ekf_error
+  src/ekf_error.cpp
+)
+
 target_link_libraries(ekf_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(ekf_error
   ${catkin_LIBRARIES}
 )

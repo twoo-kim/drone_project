@@ -18,17 +18,13 @@ def gpt_ask(req):
     question = req.question
     rospy.loginfo(f"[GPT] Received question: {question}")
 
-    ## Prompt design ##
-    prompt = f"Reply only the corresponding answer of the question: {question}"
-
     try:
         response = client.chat.completions.create(
             model=gpt_model,
             messages=[
                 {"role": "system","content": "Forget the previous conversation."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": question}
             ],
-            input = prompt,
             max_tokens = max_tokens,
         )
         answer = response.choices[0].message.content.strip()
