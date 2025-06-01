@@ -11,7 +11,9 @@ EE478 term project
 2. Controller  
     ground truth알고 있으므로 LEFT, RIGHT에 대해 최적화 경로 고려
 
-3. Localization  
+   현재 최적화 경로 기반 planner, controller (z하고 yaw에 PI 적용) 완성해서 커밋했습니다.
+   
+4. Localization  
     origin에서 기준 tag위치 (-0.075, 1.675, 0) 반영하여 ground truth 수정 완료  
     groun truth orientation도 알맞게 수정함
     
