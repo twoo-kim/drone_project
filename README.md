@@ -13,7 +13,7 @@ EE478 term project
     ground truth알고 있으므로 LEFT, RIGHT에 대해 최적화 경로 고려
 
    현재 최적화 경로 기반 planner, controller (z하고 yaw에 PI 적용) 완성해서 커밋했습니다.  
-   Class로 정리하고 일부분 수정했습니다. control은 다른 package와 충돌하는것같아서 다르게 작명했습니다  
+   Class로 정리하고 일부분 수정했습니다.  
    launch 실행 시 planner, controller 실행됩니다  
 
    
@@ -40,7 +40,7 @@ AprilTag는 추가로 첨부한 tag.yaml 파일 복사해서 실행
 ORB는 시뮬레이션 yaml로 조정 후 실행
 GPT API의 경우 공용 key가 현재 막혀있는 듯함
 
-'''
+```
 roslaunch ee478_px4_sim tag_spawn.launch
 
 roslaunch apriltag_ros continuous_detection.launch
@@ -50,6 +50,6 @@ roslaunch ekf_fusion ekf_node.launch
 roslaunch qr_detector detector.launch
 roslaunch gpt_api goal_selector.launch
 roslaunch offboard_control plan_control.launch
-'''
+```
 
 
