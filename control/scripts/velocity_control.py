@@ -73,9 +73,15 @@ class OffboardController:
         self.is_takeoff = True
         rospy.loginfo("[Controller] Take off")
     
+    def target_yaw(self):
+        dx = self.target_pose.pose.position.x - self.current_pose.pose.position.x
+        dy = self.target_pose.pose.position.y - self.current_pose.pose.position.y
+        yaw = math.atan2(dy, dx)
+        return yaw
+     
     def control_loop(self):
         # PI controller parameters
-        K_P = 0.3
+        K_P = 0.5
         K_I = 0.1
         K_YAW_P = 1.0
         K_YAW_I = 0.2
@@ -113,7 +119,7 @@ class OffboardController:
 
         # --- yaw control ---
         current_yaw = get_yaw_from_orientation(self.current_pose.pose.orientation)
-        target_yaw = get_yaw_from_orientation(self.target_pose.pose.orientation)
+        target_yaw = self.target_yaw()
         error_yaw = yaw_error(target_yaw, current_yaw)
         
         if abs(error_yaw) > 0.02:

@@ -41,9 +41,14 @@ class GoalSelector:
 
         ## GPT answer ##
         if (self.current_gate not in self.questions):
+            # Check if the gate has already passed before
+            key = self.current_gate%4
+            if (key in self.questions):
+                answer = self.questions[key]
             # Store Gate pair and Answer to prevent redundant API call
-            answer = self.ask_gpt(prompt).answer.strip().upper()
-            self.questions[self.current_gate] = answer
+            else:
+                answer = self.ask_gpt(prompt).answer.strip().upper()
+                self.questions[self.current_gate] = answer
         else:
             return
 
@@ -52,10 +57,10 @@ class GoalSelector:
             # If the answer is a number, do the LED action
             rospy.loginfo("Blink LED and turn LEFT")
             self.blink_LED(int(answer))
-        elif (answer in {"LEFT", "True", "A"}):
+        elif (answer in {"LEFT", "TRUE", "A"}):
             rospy.loginfo("Turn LEFT")
             self.publish_direction("LEFT")
-        elif (answer in {"RIGHT", "False", "B"}):
+        elif (answer in {"RIGHT", "FALSE", "B"}):
             rospy.loginfo("Turn RIGHT")
             self.publish_direction("RIGHT")
         else:

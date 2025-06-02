@@ -1,0 +1,12 @@
+<launch>
+  <arg name="qr_topic"      value="/qr_codes" />
+
+  <!-- GPT API Service Server node -->
+  <node pkg="gpt_api" name="gpt_server" type="gpt_server.py" output="screen"/>
+
+  <!-- main node -->
+  <node pkg="gpt_api" name="goal_selector" type="goal_selector.py" output="screen">
+    <remap from="/qr_code" to="$(arg qr_topic)"/>
+  </node>
+
+</launch>

@@ -81,19 +81,12 @@ class RoutePlanner:
         self.initial_line = initial_line
         self.lines = lines
 
-        # Parameters
-        self.yaw_S = [1*np.pi/4, 3*np.pi/4, 5*np.pi/4, 7*np.pi/4] # add np.pi/2 for next S's yaw
-        self.yaw_E = [2*np.pi/4, 4*np.pi/4, 6*np.pi/4, 8*np.pi/4] # add np.pi/2 for next E's yaw
-        self.yaw_initial = np.arctan2(self.SE_point[0]['S'][0], -self.SE_point[0]['S'][1])
-
         self.Z_tag = rospy.get_param("~Z_tag", 0.70)  # alwasys keep z as the height of tags 
         
         # Threshold for distance check
         self.threshold_start = rospy.get_param("~threshold_start", 0.05)
         self.threshold_curve = rospy.get_param("~threshold_curve", 0.07)
         self.threshold_line = rospy.get_param("~threshold_line", 0.1)
-
-        self.threshold_yaw = rospy.get_param("~threshold_yaw", 0.09)
 
         self.current_pose = None
         self.prev_pose = None
@@ -123,30 +116,12 @@ class RoutePlanner:
         dy = p1.y - p2.y
         dz = p1.z - p2.z
         return math.sqrt(dx*dx + dy*dy + dz*dz)
-
-    def yaw_toward_center(self, x, y):
-        dx = self.center.x - x
-        dy = self.center.y - y
-        return math.atan2(dy, dx)
-
-    def yaw_error(self, orien_cur, orien_tar):
-        q_cur = [orien_cur.x, orien_cur.y, orien_cur.z, orien_cur.w]
-        q_tar = [orien_tar.x, orien_tar.y, orien_tar.z, orien_tar.w]
-
-        _, _, cur_yaw = euler_from_quaternion(q_cur)
-        _, _, tar_yaw = euler_from_quaternion(q_tar)
-
-        # [-pi, pi] normalization
-        error = np.arctan2(np.sin(tar_yaw - cur_yaw), np.cos(tar_yaw - cur_yaw))
-        return np.abs(error)
-    
+   
     def generate_initial(self, idx):
         # Initial line to get the first gate pair from the origin
-        yaw = self.yaw_initial
         x = self.initial_line[idx][0]
         y = self.initial_line[idx][1]
         z = self.Z_tag
-        quat = quaternion_from_euler(0, 0, yaw)
 
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
@@ -155,16 +130,13 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
-        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def generate_curve(self, name, idx, direction):
         # Curve for passing through a gate
-        yaw = self.yaw_S[name]
         x = self.curves[name][direction][0][idx]
         y = self.curves[name][direction][1][idx]
         z = self.Z_tag
-        quat = quaternion_from_euler(0, 0, yaw)
 
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
@@ -173,16 +145,13 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
-        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def generate_line(self, name, idx):
         # Line for connects the gate pairs e.g. 0th -> 1st
-        yaw = self.yaw_E[name]
         x = self.lines[name][idx][0]
         y = self.lines[name][idx][1]
         z = self.Z_tag
-        quat = quaternion_from_euler(0, 0, yaw)
 
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
@@ -191,18 +160,12 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
-        wp.pose.orientation = Quaternion(*quat)
         return wp
     
     def generate_SE(self, type,  name):
-        if type == "S":
-            yaw = self.yaw_S[name]
-        if type == "E":
-            yaw = self.yaw_E[name]
         x = self.SE_point[name][type][0]
         y = self.SE_point[name][type][1]
         z = self.Z_tag
-        quat = quaternion_from_euler(0, 0, yaw)
 
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
@@ -211,7 +174,6 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
-        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def run(self):
@@ -236,11 +198,10 @@ class RoutePlanner:
             if self.waiting_for_arrival:
                 # Check distance
                 dist = self.compute_distance(self.current_pose.pose.position, self.current_waypoint.pose.position)
-                yaw_err = self.yaw_error(self.current_pose.pose.orientation, self.current_waypoint.pose.orientation)
-                
+
                 rospy.loginfo_throttle(1.0, f"[Planner] Sending pose : x={self.current_pose.pose.position.x:.2f} y={self.current_pose.pose.position.y:.2f} z={self.current_pose.pose.position.z:.2f}")
                 rospy.loginfo_throttle(1.0, f"[Planner] Sending waypoint : x={self.current_waypoint.pose.position.x:.2f} y={self.current_waypoint.pose.position.y:.2f} z={self.current_waypoint.pose.position.z}")
-                rospy.loginfo_throttle(1.0, f"[Planner] Current distance : {dist:.2f}, Yaw err: {yaw_err:.2f}")
+                rospy.loginfo_throttle(1.0, f"[Planner] Current distance : {dist:.2f}")
                 
                 # Check mode
                 if self.mode == 'initialize' or 'line':
@@ -251,7 +212,7 @@ class RoutePlanner:
                     dist_threshold == self.threshold_start
                 
                 # Check if waypoint has reached
-                if dist < dist_threshold and yaw_err < self.threshold_yaw:
+                if dist < dist_threshold:
                     # Waypoint reached
                     rospy.loginfo_throttle(1.0, "[Planner] Reached waypoint")
 
