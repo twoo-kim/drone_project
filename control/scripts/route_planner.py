@@ -8,7 +8,7 @@ from std_msgs.msg import String, Bool
 from tf.transformations import quaternion_from_euler, quaternion_matrix, euler_from_quaternion
 
 # Optimized curve points [x, y] dictionary
-curves = {'0': {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.72739197,  4.90234435,
+curves = {0: {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.72739197,  4.90234435,
          5.06729484,  5.22125275,  5.36332096,  5.49258217,  5.60799728,
          5.70880209,  5.79453619,  5.86511875,  5.92061395,  5.96113889,
          5.98688576,  5.99803993,  5.99489628,  5.97782139,  5.94735127,
@@ -26,7 +26,7 @@ curves = {'0': {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.727
         -4.06729484, -4.22125275, -4.36332096, -4.49258217, -4.60799728,
         -4.70880209, -4.79453619, -4.86511875, -4.92061395, -4.96113889,
         -4.98688576, -4.99803993, -4.99489628, -4.97782139, -4.94735127,
-        -4.90410307, -4.84852814]])}, '1': {'LEFT': np.array([[14.15147186, 14.08908791, 14.04006829, 14.00463675, 13.98325021,
+        -4.90410307, -4.84852814]])}, 1: {'LEFT': np.array([[14.15147186, 14.08908791, 14.04006829, 14.00463675, 13.98325021,
         13.97653715, 13.98509271, 14.0091107 , 14.04854901, 14.1033771 ,
         14.17372128, 14.2596573 , 14.36116112, 14.47788545, 14.60915735,
         14.75386754, 14.91085581, 15.07904001, 15.25751816, 15.44555438,
@@ -44,7 +44,7 @@ curves = {'0': {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.727
         -5.02346285, -5.01490729, -4.9908893 , -4.95145099, -4.8966229 ,
         -4.82627872, -4.7403427 , -4.63883888, -4.52211455, -4.39084265,
         -4.24613246, -4.08914419, -3.92095999, -3.74248184, -3.55444562,
-        -3.35735897, -3.15147186]])}, '2': {'LEFT': np.array([[15.84852814, 15.64864662, 15.45654661, 15.27260803, 15.09765565,
+        -3.35735897, -3.15147186]])}, 2: {'LEFT': np.array([[15.84852814, 15.64864662, 15.45654661, 15.27260803, 15.09765565,
         14.93270516, 14.77874725, 14.63667904, 14.50741783, 14.39200272,
         14.29119791, 14.20546381, 14.13488125, 14.07938605, 14.03886111,
         14.01311424, 14.00196007, 14.00510372, 14.02217861, 14.05264873,
@@ -62,7 +62,7 @@ curves = {'0': {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.727
          4.06729484,  4.22125275,  4.36332096,  4.49258217,  4.60799728,
          4.70880209,  4.79453619,  4.86511875,  4.92061395,  4.96113889,
          4.98688576,  4.99803993,  4.99489628,  4.97782139,  4.94735127,
-         4.90410307,  4.84852814]])}, '3': {'LEFT': np.array([[5.84852814, 5.91091209, 5.95993171, 5.99536325, 6.01674979,
+         4.90410307,  4.84852814]])}, 3: {'LEFT': np.array([[5.84852814, 5.91091209, 5.95993171, 5.99536325, 6.01674979,
         6.02346285, 6.01490729, 5.9908893 , 5.95145099, 5.8966229 ,
         5.82627872, 5.7403427 , 5.63883888, 5.52211455, 5.39084265,
         5.24613246, 5.08914419, 4.92095999, 4.74248184, 4.55444562,
@@ -83,26 +83,26 @@ curves = {'0': {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.727
         3.35735897, 3.15147186]])}}
 
 # Start-End points of each gate pair
-SE_point = {'0': {'S': np.array([[ 4.15147186],
+SE_point = {0: {'S': np.array([[ 4.15147186],
        [-3.15147186]]), 'E': np.array([[ 5.84852814],
-       [-4.84852814]])}, '1': {'S': np.array([[14.15147186],
+       [-4.84852814]])}, 1: {'S': np.array([[14.15147186],
        [-4.84852814]]), 'E': np.array([[15.84852814],
-       [-3.15147186]])}, '2': {'S': np.array([[15.84852814],
+       [-3.15147186]])}, 2: {'S': np.array([[15.84852814],
        [ 3.15147186]]), 'E': np.array([[14.15147186],
-       [ 4.84852814]])}, '3': {'S': np.array([[5.84852814],
+       [ 4.84852814]])}, 3: {'S': np.array([[5.84852814],
        [4.84852814]]), 'E': np.array([[4.15147186],
        [3.15147186]])}}
 
 # Initial Line origin(0,0) -> First start point
-x_init = np.linspace(0, SE_point[0]['S'][0], 10)
-y_init = np.linspace(0, SE_point[0]['S'][1], 10)
+x_init = np.linspace(0, SE_point[0]['S'][0][0], 10)
+y_init = np.linspace(0, SE_point[0]['S'][1][0], 10)
 initial_line = np.array(list(zip(x_init, y_init)))
 
 # Connect each start-end points of the gate pairs
 lines = dict()
 for i in range(4):
-    x_values = np.linspace(SE_point[(3+i)%4]['E'][0], SE_point[i]['S'][0], 20)
-    y_values = np.linspace(SE_point[(3+i)%4]['E'][1], SE_point[i]['S'][1], 20)
+    x_values = np.linspace(SE_point[(3+i)%4]['E'][0][0], SE_point[i]['S'][0][0], 10)
+    y_values = np.linspace(SE_point[(3+i)%4]['E'][1][0], SE_point[i]['S'][1][0], 10)
     lines[i] = np.array(list(zip(x_values, y_values)))
 
 # Route Planner class
@@ -114,20 +114,24 @@ class RoutePlanner:
         self.SE_point = SE_point
         self.initial_line = initial_line
         self.lines = lines
-
+        self.off = -np.pi/2
+        self.yaw_S = [-1*np.pi/4, 1*np.pi/4, 3*np.pi/4, -3*np.pi/4]
+        self.yaw_E = [-np.pi/2, 0, np.pi/2, np.pi] #0(opposite), 1(opposite), 2(opposite), 3(opposite) at [np.pi/2, np.pi, -np.pi/2, 0] 
+        self.yaw_initial = np.arctan2(SE_point[0]['S'][1][0], SE_point[0]['S'][0][0])
+        
         self.Z_tag = rospy.get_param("~Z_tag", 0.70)  # alwasys keep z as the height of tags 
         
         # Threshold for distance check
-        self.threshold_start = rospy.get_param("~threshold_start", 0.05)
-        self.threshold_curve = rospy.get_param("~threshold_curve", 0.07)
-        self.threshold_line = rospy.get_param("~threshold_line", 0.1)
+        self.threshold_start = rospy.get_param("~threshold_start", 0.10)
+        self.threshold_curve = rospy.get_param("~threshold_curve", 0.10)
+        self.threshold_line = rospy.get_param("~threshold_line", 0.10)
 
         self.current_pose = None
         self.prev_pose = None
         self.direction = "None"
-
-        # ROS interfaces
-        self.pose_sub = rospy.Subscriber("/pose_topic", PoseStamped, self.pose_callback)   # subsribe the EKF solution
+        
+        # ROS interfaces /mavros/local_position/pose   /pose_topic
+        self.pose_sub = rospy.Subscriber("/mavros/local_position/pose", PoseStamped, self.pose_callback)   # subsribe the EKF solution
         self.direction_sub = rospy.Subscriber("/goal", String, self.direction_callback)
         self.waypoint_pub = rospy.Publisher("/lookahead_waypoint", PoseStamped, queue_size=1)
         self.gatepass_pub = rospy.Publisher("/gate_passed", Bool, queue_size = 1)
@@ -156,7 +160,9 @@ class RoutePlanner:
         x = self.initial_line[idx][0]
         y = self.initial_line[idx][1]
         z = self.Z_tag
-
+        yaw = self.yaw_initial
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -164,6 +170,7 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def generate_curve(self, name, idx, direction):
@@ -171,7 +178,9 @@ class RoutePlanner:
         x = self.curves[name][direction][0][idx]
         y = self.curves[name][direction][1][idx]
         z = self.Z_tag
-
+        yaw = self.yaw_S[name]
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -179,6 +188,7 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def generate_line(self, name, idx):
@@ -186,7 +196,9 @@ class RoutePlanner:
         x = self.lines[name][idx][0]
         y = self.lines[name][idx][1]
         z = self.Z_tag
-
+        yaw = self.yaw_E[name]
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -194,13 +206,19 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
     
     def generate_SE(self, type,  name):
-        x = self.SE_point[name][type][0]
-        y = self.SE_point[name][type][1]
+        x = self.SE_point[name][type][0][0]
+        y = self.SE_point[name][type][1][0]
         z = self.Z_tag
-
+        if type=="S":
+            yaw = self.yaw_S[name]
+        if type == "E":
+            yaw = self.yaw_E[name]
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -208,13 +226,14 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def run(self):
         rate = rospy.Rate(20)
         self.current_waypoint = None
         self.mode = "initialize"
-        self.direction = "LEFT"
+        self.direction = "None"
         self.name = 0
 
         rospy.loginfo("[Planner] Route Planner has intialized ")
@@ -233,7 +252,7 @@ class RoutePlanner:
                 # Check distance
                 dist = self.compute_distance(self.current_pose.pose.position, self.current_waypoint.pose.position)
 
-                rospy.loginfo_throttle(1.0, f"[Planner] Sending pose : x={self.current_pose.pose.position.x:.2f} y={self.current_pose.pose.position.y:.2f} z={self.current_pose.pose.position.z:.2f}")
+                rospy.loginfo_throttle(1.0, f"[Planner] Sending pose {self.mode}: x={self.current_pose.pose.position.x:.2f} y={self.current_pose.pose.position.y:.2f} z={self.current_pose.pose.position.z:.2f}")
                 rospy.loginfo_throttle(1.0, f"[Planner] Sending waypoint : x={self.current_waypoint.pose.position.x:.2f} y={self.current_waypoint.pose.position.y:.2f} z={self.current_waypoint.pose.position.z}")
                 rospy.loginfo_throttle(1.0, f"[Planner] Current distance : {dist:.2f}")
                 
@@ -279,7 +298,7 @@ class RoutePlanner:
         # Find the next state of the FSM
         if self.mode == "line":
             # Follow the line or go to the start point state
-            if self.idx < len(self.initial_line)-1:
+            if self.idx < len(self.lines[0])-1:
                 self.idx +=1
             else:
                 self.idx = 0
@@ -319,4 +338,3 @@ class RoutePlanner:
 if __name__ == '__main__':
     RoutePlanner(curves, SE_point, initial_line, lines)
     rospy.spin()
-
