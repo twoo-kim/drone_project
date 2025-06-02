@@ -43,8 +43,8 @@ class OffboardController:
         self.yaw_error_integral = 0.0
         self.previous_time = rospy.Time.now().to_sec()
 
-        # Publisher subscriber
-        rospy.Subscriber("/pose_topic", PoseStamped, callback=self.pose_callback)
+        # Publisher subscriber /mavros/local_position/pose /pose_topic
+        rospy.Subscriber("/mavros/local_position/pose", PoseStamped, callback=self.pose_callback)
         rospy.Subscriber("/lookahead_waypoint", PoseStamped, callback=self.waypoint_callback)
         self.local_vel_pub = rospy.Publisher("/mavros/setpoint_velocity/cmd_vel", TwistStamped, queue_size=10)
         self.pose_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=10)
@@ -83,8 +83,8 @@ class OffboardController:
         # PI controller parameters
         K_P = 0.5
         K_I = 0.1
-        K_YAW_P = 1.0
-        K_YAW_I = 0.2
+        K_YAW_P = 0.8
+        K_YAW_I = 0.1
 
         MAX_VEL_XY = 1.0   # m/s
         MAX_VEL_Z  = 0.5   # m/s
@@ -119,10 +119,10 @@ class OffboardController:
 
         # --- yaw control ---
         current_yaw = get_yaw_from_orientation(self.current_pose.pose.orientation)
-        target_yaw = self.target_yaw()
+        target_yaw = get_yaw_from_orientation(self.target_pose.pose.orientation) #self.target_yaw()
         error_yaw = yaw_error(target_yaw, current_yaw)
         
-        if abs(error_yaw) > 0.02:
+        if abs(error_yaw) > 0.025:
             self.yaw_error_integral += error_yaw * dt
             
         self.yaw_error_integral = clamp(self.yaw_error_integral, -MAX_YAW_INT, MAX_YAW_INT)
