@@ -1,25 +1,23 @@
 #include "ekf_so3.hpp"
 
+
 void EKFNode::init(ros::NodeHandle& nh) {
     nh_ = nh;
     
     // Covariance for sensor data
-    double orb_cov, tag_cov, refactor_threshold;
+    double orb_cov, tag_cov;
     nh_.param("ekf/orb_covariance", orb_cov, 0.1);
     nh_.param("ekf/tag_covariance", tag_cov, 0.1);
-    nh_.param("ekf/orb_refactor_threshold", refactor_threshold, 1.5);
     orb_cov_ = orb_cov;
     tag_cov_ = tag_cov;
-    refactor_threshold_ = refactor_threshold;
 
     // Initialize state
-    prev_time_ = 0;
+    prev_time_ = 0.0;
     is_orb_lost_ = false;
-    last_valid_time_ = ros::Time(0.0);
-    lost_threshold_ = ros::Duration(0.3);
 
     // Initialize EKF module
     ekf_.init(nh_);
+    last_ekf_state_ = ekf_.getState();
 
     // Initialize subscribers
     imu_sub_ = nh_.subscribe("/imu_topic", 100, &EKFNode::imuCallback, this);
@@ -51,8 +49,13 @@ void EKFNode::publishPose(void) {
 }
 
 void EKFNode::imuCallback(const sensor_msgs::Imu& imu) {
-    // Find dt
+    // Pass the very first call
     double now = imu.header.stamp.toSec();
+    if (prev_time_ < 1e-8) {
+        prev_time_ = now;
+        return;
+    }
+    // Find dt
     double dt = now - prev_time_;
     prev_time_ = now;
 
@@ -71,17 +74,34 @@ void EKFNode::orbCallback(const geometry_msgs::PoseStamped& p_orb) {
     Eigen::Quaterniond q(p_orb.pose.orientation.w, p_orb.pose.orientation.x,
                          p_orb.pose.orientation.y, p_orb.pose.orientation.z);
     Sophus::SO3d R_meas(q);
-    
+    static Sophus::SE3d T_map_orb;
+    static bool apply_offset = false;
+
     // Check if orb has lost its tracking before
     if (is_orb_lost_) {
-        // Check if the new tracking is still valid
         is_orb_lost_ = false;
+
+        // Compute offset from new ORB frame to the global frame
+        Sophus::SE3d T_orb_new(R_meas, p_meas);
+        Sophus::SE3d T_map_old(last_ekf_state_.R, last_ekf_state_.p);
+        T_map_orb = T_map_old * T_orb_new.inverse();
+        apply_offset = true;
+        
+        // Check error with the current value
         struct EKFState state = ekf_.getState();
         double pos_err = (p_meas - state.p).norm();
-        ROS_INFO("ORB refactor error: %f", pos_err);
-        // Dynamically adjust the orb covariance depending on its error
-        double orb_stddev = std::max(0.01, 0.5 * pos_err);
+
+        // Adjust covariance
+        double orb_stddev = std::max(0.05, pos_err);
         orb_cov_ = orb_stddev * orb_stddev;
+    }
+
+    // Apply offset if there is
+    if (apply_offset) {
+        Sophus::SE3d T_orb(R_meas, p_meas);
+        Sophus::SE3d T_map = T_map_orb * T_orb;
+        p_meas = T_map.translation();
+        R_meas = T_map.so3();
     }
 
     // Covariance matrix for ORB SLAM
@@ -91,13 +111,20 @@ void EKFNode::orbCallback(const geometry_msgs::PoseStamped& p_orb) {
     ekf_.updatePose(p_meas, R_meas, R_cov);
 }
 
-void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {
+void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {  
     // Get pose and orientation
     Eigen::Vector3d p_meas(p_tag.pose.position.x, p_tag.pose.position.y, p_tag.pose.position.z);
     Eigen::Quaterniond q(p_tag.pose.orientation.w, p_tag.pose.orientation.x,
                          p_tag.pose.orientation.y, p_tag.pose.orientation.z);
     Sophus::SO3d R_meas(q);
     
+    // Check error with the current value
+    struct EKFState state = ekf_.getState();
+    double pos_err = (p_meas - state.p).norm();
+    if (pos_err > 2.0) {
+        return;
+    }
+
     // Covariance matrix for AprilTag
     Eigen::Matrix<double, 6, 6> R_cov = Eigen::Matrix<double, 6, 6>::Identity();
     R_cov *= tag_cov_;
@@ -106,17 +133,10 @@ void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {
 }
 
 void EKFNode::keypointCallback(const sensor_msgs::PointCloud2::ConstPtr& key_points) {
-    ros::Time now = ros::Time::now();
-
     // Check if keypoin has lost (width: number of tracked keypoints)
-    if (key_points->width > 0) {
-        last_valid_time_ = now;
-    } else {
-        if ((now - last_valid_time_) >= lost_threshold_) {
-            // ORB has lost its tracking
-            is_orb_lost_ = true;
-            return;
-        }
+    if (key_points->width == 0) {
+        last_ekf_state_ = ekf_.getState();
+        is_orb_lost_ = true;
     }
 }
 

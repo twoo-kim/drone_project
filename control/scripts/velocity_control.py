@@ -43,8 +43,8 @@ class OffboardController:
         self.yaw_error_integral = 0.0
         self.previous_time = rospy.Time.now().to_sec()
 
-        # Publisher subscriber /mavros/local_position/pose /pose_topic
-        rospy.Subscriber("/mavros/local_position/pose", PoseStamped, callback=self.pose_callback)
+        # Publisher subscriber
+        rospy.Subscriber("/pose_topic", PoseStamped, callback=self.pose_callback)
         rospy.Subscriber("/lookahead_waypoint", PoseStamped, callback=self.waypoint_callback)
         self.local_vel_pub = rospy.Publisher("/mavros/setpoint_velocity/cmd_vel", TwistStamped, queue_size=10)
         self.pose_pub = rospy.Publisher("/mavros/setpoint_position/local", PoseStamped, queue_size=10)
@@ -72,16 +72,10 @@ class OffboardController:
             rate.sleep()
         self.is_takeoff = True
         rospy.loginfo("[Controller] Take off")
-    
-    def target_yaw(self):
-        dx = self.target_pose.pose.position.x - self.current_pose.pose.position.x
-        dy = self.target_pose.pose.position.y - self.current_pose.pose.position.y
-        yaw = math.atan2(dy, dx)
-        return yaw
      
     def control_loop(self):
         # PI controller parameters
-        K_P = 0.5
+        K_P = 0.8
         K_I = 0.1
         K_YAW_P = 0.8
         K_YAW_I = 0.1
@@ -106,11 +100,11 @@ class OffboardController:
         vz = K_P * error_z
 
         # --- yaw control (PI) ---
-        if abs(error_z) > 0.02:
-            self.z_error_integral += error_z * dt
+        # if abs(error_z) > 0.02:
+        #     self.z_error_integral += error_z * dt
         
-        self.z_error_integral = clamp(self.z_error_integral, -MAX_Z_INT, MAX_Z_INT)
-        vz = vz + K_I * self.z_error_integral
+        # self.z_error_integral = clamp(self.z_error_integral, -MAX_Z_INT, MAX_Z_INT)
+        # vz = vz + K_I * self.z_error_integral
 
         # --- clamp velocity ---
         self.cmd_velocity.twist.linear.x = clamp(vx, -MAX_VEL_XY, MAX_VEL_XY)
@@ -122,14 +116,14 @@ class OffboardController:
         target_yaw = get_yaw_from_orientation(self.target_pose.pose.orientation) #self.target_yaw()
         error_yaw = yaw_error(target_yaw, current_yaw)
         
-        if abs(error_yaw) > 0.025:
-            self.yaw_error_integral += error_yaw * dt
+        # if abs(error_yaw) > 0.025:
+        #     self.yaw_error_integral += error_yaw * dt
             
-        self.yaw_error_integral = clamp(self.yaw_error_integral, -MAX_YAW_INT, MAX_YAW_INT)
-        rospy.loginfo_throttle(1, "[Controller] current yaw error : %.2f, yaw : %.2f", error_yaw*180/np.pi, current_yaw*180/np.pi)
+        # self.yaw_error_integral = clamp(self.yaw_error_integral, -MAX_YAW_INT, MAX_YAW_INT)
+        # rospy.loginfo_throttle(1, "[Controller] current yaw error : %.2f, yaw : %.2f", error_yaw*180/np.pi, current_yaw*180/np.pi)
 
         # wz = K_YAW_P * error_yaw
-        wz = K_YAW_P * error_yaw + K_YAW_I * self.yaw_error_integral
+        wz = K_YAW_P * error_yaw #+ K_YAW_I * self.yaw_error_integral
         self.cmd_velocity.twist.angular.z = clamp(wz, -MAX_YAW_RATE, MAX_YAW_RATE)
 
         # Publish the velocity

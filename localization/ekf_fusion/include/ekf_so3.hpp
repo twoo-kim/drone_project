@@ -4,7 +4,9 @@
 #include <ros/ros.h>
 #include <Eigen/Dense>
 #include <sophus/so3.hpp>
+#include <sophus/se3.hpp>
 
+#include "geometry_msgs/TransformStamped.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/PointCloud2.h"
@@ -28,11 +30,11 @@ private:
     /* EKF estimation */
     EKF ekf_;
     double prev_time_;
-    double orb_cov_, tag_cov_, refactor_threshold_;
-    
-    bool is_orb_lost_;
-    ros::Time last_valid_time_;
-    ros::Duration lost_threshold_;
+    double orb_cov_, tag_cov_;
+
+    /* ORB relocalization */
+    bool is_orb_lost_, wait_relocalization_, has_first_relocalization_;
+    struct EKFState last_ekf_state_;
 
     /* ROS */
     ros::NodeHandle nh_;
