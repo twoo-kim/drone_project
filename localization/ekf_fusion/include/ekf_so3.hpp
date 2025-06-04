@@ -10,9 +10,15 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/PointCloud2.h"
+#include "std_msgs/Bool.h"
 
 #include "ekf.hpp"
 
+/* FSM states */
+// FULL: IMU+ORB+AprilTag, TAG: IMU+AprilTag, LOST: IMU only
+enum class FusionMode {FULL, TAG, LOST};
+
+/* EKF node class*/
 class EKFNode {
 public:
     EKFNode() {}
@@ -26,15 +32,26 @@ private:
     void tagCallback(const geometry_msgs::PoseStamped& p_tag);
     void keypointCallback(const sensor_msgs::PointCloud2::ConstPtr& key_points);
     void publishPose(void);
-    
+
+    /* Utility functions */
+    void updateMode(void);
+
     /* EKF estimation */
     EKF ekf_;
     double prev_time_;
     double orb_cov_, tag_cov_;
 
+    /* FSM */
+    FusionMode mode_;
+    ros::Time last_lost_keypoint_time_;
+    ros::Time last_valid_keypoint_time_;
+    ros::Time last_valid_tag_time_;
+    ros::Duration lost_time_;
+
     /* ORB relocalization */
-    bool is_orb_lost_, wait_relocalization_, has_first_relocalization_;
+    bool is_orb_lost_;
     struct EKFState last_ekf_state_;
+    Sophus::SE3d T_map_orb_;
 
     /* ROS */
     ros::NodeHandle nh_;

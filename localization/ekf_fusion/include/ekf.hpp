@@ -24,6 +24,7 @@ public:
     // Functions for estimation
     void predict(const Eigen::Vector3d& lin, const Eigen::Vector3d& ang, double dt);
     void updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, const Eigen::Matrix<double, 6, 6>& R_cov);
+    void setProcessNoise(double times);
 
     // Get state
     struct EKFState getState(void);

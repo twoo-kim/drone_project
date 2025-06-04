@@ -1,5 +1,8 @@
 #include "ekf.hpp"
 
+// Mahalanobis distance threshold
+#define MAHAL_THRESHOLD 12.59
+
 void EKF::init(ros::NodeHandle& nh) {
     nh_ = nh;
 
@@ -113,6 +116,12 @@ void EKF::updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, 
     /* 3. Kalman filter */
     Eigen::Matrix<double,6,6> S = H*P_*H.transpose() + R_cov;
     Eigen::Matrix<double,15,6> K = P_*H.transpose()*S.inverse();
+    // Outlier check; Mahalanobis distance with 95% confidence chi^2 = 12.59
+    double mahalanobis_dist = y.transpose() * S.inverse() * y;
+    if (mahalanobis_dist > MAHAL_THRESHOLD) {
+        return;
+    }
+
     // dx = x - x_meas
     Eigen::Matrix<double,15,1> dx = K*y;
 
@@ -128,4 +137,9 @@ void EKF::updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, 
 
 struct EKFState EKF::getState(void) {
     return state_;
+}
+
+void EKF::setProcessNoise(double times) {
+    acc_cov_ *= times;
+    ang_cov_ *= times;
 }
