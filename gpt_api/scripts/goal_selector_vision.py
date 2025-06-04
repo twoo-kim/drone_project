@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 
 import rospy
-from gpt_api.srv import GPTAsk
+from gpt_api.srv import GPTImageQuery
 from std_msgs.msg import String, Bool
+from sensor_msgs.msg import Image
 
-# import Jetson.GPIO as GPIO
-# import time
+import Jetson.GPIO as GPIO
+import time
 
 # GPIO setting
-# led_pin = 15
-# GPIO.setmode(GPIO.BOARD)
-# GPIO.setup(led_pin, GPIO.OUT)
+led_pin = 15
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(led_pin, GPIO.OUT)
 
-# Goal selector class
 class GoalSelector:
     def __init__(self):
         rospy.init_node('goal_selector')
         # Publisher, Subscriber
         self.pub = rospy.Publisher("/goal", String, queue_size=1)
-        self.qr_sub = rospy.Subscriber("/qr_code", String, self.gptCallback, queue_size=1)
+        self.qr_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.gptCallback)
         self.gate_sub = rospy.Subscriber("/gate_passed", Bool, self.gateCallback, queue_size=1)
 
         # GPT service
-        rospy.wait_for_service('ask_gpt')
-        self.ask_gpt = rospy.ServiceProxy('ask_gpt', GPTAsk)
+        rospy.wait_for_service('ask_image_gpt')
+        self.ask_gpt = rospy.ServiceProxy('ask_image_gpt', GPTImageQuery)
 
         # Current state
         self.current_gate = 0
@@ -35,35 +35,33 @@ class GoalSelector:
         self.direction.data = dir
         self.pub.publish(self.direction)
 
-    # def blink_once(self):
-    #     GPIO.output(led_pin, GPIO.HIGH)
-    #     time.sleep(0.5)
-    #     GPIO.output(led_pin, GPIO.LOW)
-    #     time.sleep(0.5)
+    def blink_once(self):
+        GPIO.output(led_pin, GPIO.HIGH)
+        time.sleep(0.5)
+        GPIO.output(led_pin, GPIO.LOW)
+        time.sleep(0.5)
 
     def blink_LED(self, num):
         # Blink LED with the given number times
-        # for _ in range(num):
-        #     self.blink_once()
+        for _ in range(num):
+            self.blink_once()
         # Turn left
-        self.publish_direction("LEFT")
-        return
+        self.publish_direction
 
     def gptCallback(self, msg):
+        num_gate = 3
         ## Prompt design ##
-        prompt = f"For the following question, return the key, LEFT or RIGHT that corresponds to the correct answer. \
-                Reply with only the answer — no explanation, no punctuation, no extra text. \
-                Question: {msg.data}"
+        prompt = f"There are problem sets you have to answer in monitor. Give me an answer between 2 options"
 
         ## GPT answer ##
         if (self.current_gate not in self.questions):
             # Check if the gate has already passed before
-            key = self.current_gate%4
+            key = self.current_gate%num_gate
             if (key in self.questions):
                 answer = self.questions[key]
             # Store Gate pair and Answer to prevent redundant API call
             else:
-                answer = self.ask_gpt(prompt).answer.strip().upper()
+                answer = self.ask_gpt(msg, prompt).answer.strip().upper()
                 self.questions[self.current_gate] = answer
         else:
             return

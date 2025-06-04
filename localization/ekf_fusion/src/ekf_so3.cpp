@@ -121,7 +121,7 @@ void EKFNode::orbCallback(const geometry_msgs::PoseStamped& p_orb) {
 }
 
 void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {
-    last_valid_tag_ = p_tag.header.stamp;
+    last_valid_tag_time_ = p_tag.header.stamp;
 
     // Get pose and orientation
     Eigen::Vector3d p_meas(p_tag.pose.position.x, p_tag.pose.position.y, p_tag.pose.position.z);
