@@ -76,7 +76,7 @@ class OffboardController:
     def target_yaw(self):
         dx = self.target_pose.pose.position.x - self.current_pose.pose.position.x
         dy = self.target_pose.pose.position.y - self.current_pose.pose.position.y
-        yaw = math.atan2(dy, dx)
+        yaw = math.atan2(dx, dy)
         return yaw
      
     def control_loop(self):
