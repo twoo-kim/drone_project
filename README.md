@@ -19,10 +19,8 @@ tmux kill-server
 
 2. **Path Planner**  
     당장은 ground truth ```/mavros/local_position/pose```따라 가도록 해서 테스트 실행
-    1. yaw check는 controller에서 하도록, 중복 확인 시 waypoint publish 너무 제한적임
-    2. gate와 지나치게 가까워 짐. 1~1.5 이상에서 멈추는게 좋을 듯 함  
-       path 새로 만들어야 할 것 같습니다
-    3. 0.2~0.5 정도의 오차가 생길 수 있다는 점을 고려할 때, 그냥 중심을 통과하는게 안정적일 듯함. 현재 실행 시 안쪽 gate 테두리와 충돌
+    1. controller 조정 및 점 개수 조정
+
 
 3. **Controller**  
     1. target pose와 current pose의 벡터 차를 통해 yaw를 계산하도록 수정
@@ -36,8 +34,11 @@ tmux kill-server
     rosrun ekf_fusion ekf_error
     ```
     2. EKF  
+      IMU bias state 추가  
       covariance 조정 중  
-      다만 AprilTag 및 ORB 특성 따라서 조금 더 dynamic하게 covarinace 조정 적용 예정
+      ORB tracking잃었을 때 이전 pose사용 코드 추가했지만 효과 미미  
+      April Tag 가깝지 않으면 값이 좋지 않음, 적당한 거리에서 적용되기 했지만 z방향으로 너무 진동함 적용 정도를 줄이거나 해야할 듯함
+
 
 
 수정사항 있으면 README.md에 적어주세요.

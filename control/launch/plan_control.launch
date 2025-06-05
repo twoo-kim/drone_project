@@ -1,6 +1,6 @@
 <launch>
-  <arg name="pose_topic"      value="/mavros/local_position/pose" />
-  <!--arg name="pose_topic"      value="/ekf_node/ekf_pose"-->
+  <!--arg name="pose_topic"      value="/mavros/local_position/pose" -->
+  <arg name="pose_topic"      value="/ekf_node/ekf_pose"/>
 
   <!-- Route Planner node -->
   <node pkg="control" name="route_planner" type="route_planner.py" output="screen">

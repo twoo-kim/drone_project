@@ -8,90 +8,40 @@ from std_msgs.msg import String, Bool
 from tf.transformations import quaternion_from_euler, quaternion_matrix, euler_from_quaternion
 
 # Optimized curve points [x, y] dictionary
-curves = {0: {'LEFT': np.array([[ 4.15147186,  4.35135338,  4.54345339,  4.72739197,  4.90234435,
-         5.06729484,  5.22125275,  5.36332096,  5.49258217,  5.60799728,
-         5.70880209,  5.79453619,  5.86511875,  5.92061395,  5.96113889,
-         5.98688576,  5.99803993,  5.99489628,  5.97782139,  5.94735127,
-         5.90410307,  5.84852814],
-       [-3.15147186, -3.08908791, -3.04006829, -3.00463675, -2.98325021,
-        -2.97653715, -2.98509271, -3.0091107 , -3.04854901, -3.1033771 ,
-        -3.17372128, -3.2596573 , -3.36116112, -3.47788545, -3.60915735,
-        -3.75386754, -3.91085581, -4.07904001, -4.25751816, -4.44555438,
-        -4.64264103, -4.84852814]]), 'RIGHT': np.array([[ 4.15147186,  4.08908791,  4.04006829,  4.00463675,  3.98325021,
-         3.97653715,  3.98509271,  4.0091107 ,  4.04854901,  4.1033771 ,
-         4.17372128,  4.2596573 ,  4.36116112,  4.47788545,  4.60915735,
-         4.75386754,  4.91085581,  5.07904001,  5.25751816,  5.44555438,
-         5.64264103,  5.84852814],
-       [-3.15147186, -3.35135338, -3.54345339, -3.72739197, -3.90234435,
-        -4.06729484, -4.22125275, -4.36332096, -4.49258217, -4.60799728,
-        -4.70880209, -4.79453619, -4.86511875, -4.92061395, -4.96113889,
-        -4.98688576, -4.99803993, -4.99489628, -4.97782139, -4.94735127,
-        -4.90410307, -4.84852814]])}, 1: {'LEFT': np.array([[14.15147186, 14.08908791, 14.04006829, 14.00463675, 13.98325021,
-        13.97653715, 13.98509271, 14.0091107 , 14.04854901, 14.1033771 ,
-        14.17372128, 14.2596573 , 14.36116112, 14.47788545, 14.60915735,
-        14.75386754, 14.91085581, 15.07904001, 15.25751816, 15.44555438,
-        15.64264103, 15.84852814],
-       [-4.84852814, -4.64864662, -4.45654661, -4.27260803, -4.09765565,
-        -3.93270516, -3.77874725, -3.63667904, -3.50741783, -3.39200272,
-        -3.29119791, -3.20546381, -3.13488125, -3.07938605, -3.03886111,
-        -3.01311424, -3.00196007, -3.00510372, -3.02217861, -3.05264873,
-        -3.09589693, -3.15147186]]), 'RIGHT': np.array([[14.15147186, 14.35135338, 14.54345339, 14.72739197, 14.90234435,
-        15.06729484, 15.22125275, 15.36332096, 15.49258217, 15.60799728,
-        15.70880209, 15.79453619, 15.86511875, 15.92061395, 15.96113889,
-        15.98688576, 15.99803993, 15.99489628, 15.97782139, 15.94735127,
-        15.90410307, 15.84852814],
-       [-4.84852814, -4.91091209, -4.95993171, -4.99536325, -5.01674979,
-        -5.02346285, -5.01490729, -4.9908893 , -4.95145099, -4.8966229 ,
-        -4.82627872, -4.7403427 , -4.63883888, -4.52211455, -4.39084265,
-        -4.24613246, -4.08914419, -3.92095999, -3.74248184, -3.55444562,
-        -3.35735897, -3.15147186]])}, 2: {'LEFT': np.array([[15.84852814, 15.64864662, 15.45654661, 15.27260803, 15.09765565,
-        14.93270516, 14.77874725, 14.63667904, 14.50741783, 14.39200272,
-        14.29119791, 14.20546381, 14.13488125, 14.07938605, 14.03886111,
-        14.01311424, 14.00196007, 14.00510372, 14.02217861, 14.05264873,
-        14.09589693, 14.15147186],
-       [ 3.15147186,  3.08908791,  3.04006829,  3.00463675,  2.98325021,
-         2.97653715,  2.98509271,  3.0091107 ,  3.04854901,  3.1033771 ,
-         3.17372128,  3.2596573 ,  3.36116112,  3.47788545,  3.60915735,
-         3.75386754,  3.91085581,  4.07904001,  4.25751816,  4.44555438,
-         4.64264103,  4.84852814]]), 'RIGHT': np.array([[15.84852814, 15.91091209, 15.95993171, 15.99536325, 16.01674979,
-        16.02346285, 16.01490729, 15.9908893 , 15.95145099, 15.8966229 ,
-        15.82627872, 15.7403427 , 15.63883888, 15.52211455, 15.39084265,
-        15.24613246, 15.08914419, 14.92095999, 14.74248184, 14.55444562,
-        14.35735897, 14.15147186],
-       [ 3.15147186,  3.35135338,  3.54345339,  3.72739197,  3.90234435,
-         4.06729484,  4.22125275,  4.36332096,  4.49258217,  4.60799728,
-         4.70880209,  4.79453619,  4.86511875,  4.92061395,  4.96113889,
-         4.98688576,  4.99803993,  4.99489628,  4.97782139,  4.94735127,
-         4.90410307,  4.84852814]])}, 3: {'LEFT': np.array([[5.84852814, 5.91091209, 5.95993171, 5.99536325, 6.01674979,
-        6.02346285, 6.01490729, 5.9908893 , 5.95145099, 5.8966229 ,
-        5.82627872, 5.7403427 , 5.63883888, 5.52211455, 5.39084265,
-        5.24613246, 5.08914419, 4.92095999, 4.74248184, 4.55444562,
-        4.35735897, 4.15147186],
-       [4.84852814, 4.64864662, 4.45654661, 4.27260803, 4.09765565,
-        3.93270516, 3.77874725, 3.63667904, 3.50741783, 3.39200272,
-        3.29119791, 3.20546381, 3.13488125, 3.07938605, 3.03886111,
-        3.01311424, 3.00196007, 3.00510372, 3.02217861, 3.05264873,
-        3.09589693, 3.15147186]]), 'RIGHT': np.array([[5.84852814, 5.64864662, 5.45654661, 5.27260803, 5.09765565,
-        4.93270516, 4.77874725, 4.63667904, 4.50741783, 4.39200272,
-        4.29119791, 4.20546381, 4.13488125, 4.07938605, 4.03886111,
-        4.01311424, 4.00196007, 4.00510372, 4.02217861, 4.05264873,
-        4.09589693, 4.15147186],
-       [4.84852814, 4.91091209, 4.95993171, 4.99536325, 5.01674979,
-        5.02346285, 5.01490729, 4.9908893 , 4.95145099, 4.8966229 ,
-        4.82627872, 4.7403427 , 4.63883888, 4.52211455, 4.39084265,
-        4.24613246, 4.08914419, 3.92095999, 3.74248184, 3.55444562,
-        3.35735897, 3.15147186]])}}
+curves = {
+    0: {'LEFT': np.array([[3.75649712, 4.01763272,  4.26693309,  4.50229484,  4.72182989, 4.92451166, 5.11038629, 5.27993045,  5.43375368,  5.57233515, 5.69618356,  5.80622531, 5.90332091],
+                          [-2.65649712, -2.71503543, -2.7731686 , -2.83171292, -2.89157896, -2.95339346, -3.01850518, -3.08895065, -3.16655655, -3.25270407, -3.34909285, -3.45778229, -3.57995522]]),
+        'RIGHT': np.array([[ 3.65649712,  3.78971077,  3.82394803,  3.86039018,  3.90029759, 3.94450368,  3.99452004,  4.05257818,  4.12065691,  4.20025019, 4.29320651,  4.40172691,  4.52703451],
+                           [-2.65649712, -2.94295739, -3.21615366, -3.47361758, -3.71311125, -3.93340143, -4.13437143, -4.31630292, -4.47965332, -4.62478904, -4.7520699 , -4.86228069, -4.95624163]])},
+    1: {'LEFT': np.array([[13.65649712, 13.61503543, 13.6731686 , 13.73171292, 13.79157896, 13.85339346, 13.91850518, 13.98895065, 14.06655655, 14.15270407, 14.24909285, 14.35778229, 14.47995522],
+                          [-5.34350288, -5.08236728, -4.83306691, -4.59770516, -4.37817011, -4.17548834, -3.98961371, -3.82006955, -3.66624632, -3.52766485, -3.40381644, -3.29377469, -3.19667909]]),
+        'RIGHT': np.array([[13.65649712, 13.94295739, 14.21615366, 14.47361758, 14.71311125, 14.93340143, 15.13437143, 15.31630292, 15.47965332, 15.62478904, 15.7520699 , 15.86228069, 15.95624163],
+                            [-5.34350288, -5.31028923, -5.27605197, -5.23960982, -5.19970241, -5.15549632, -5.10547996, -5.04742182, -4.97934309, -4.89974981, -4.80679349, -4.69827309, -4.57296549]])},
+    2: {'LEFT': np.array([[16.34350288, 16.08236728, 15.83306691, 15.59770516, 15.37817011, 15.17548834, 14.98961371, 14.82006955, 14.66624632, 14.52766485, 14.40381644, 14.29377469, 14.19667909],
+                          [ 2.55649712,  2.61503543,  2.6731686 ,  2.73171292,  2.79157896, 2.85339346,  2.91850518,  2.98895065,  3.06655655,  3.15270407, 3.24909285,  3.35778229,  3.47995522]]),
+        'RIGHT': np.array([[16.34350288, 16.31028923, 16.27605197, 16.23960982, 16.19970241, 16.15549632, 16.10547996, 16.04742182, 15.97934309, 15.89974981, 15.80679349, 15.69827309, 15.57296549],
+                           [ 2.55649712,  2.84295739,  3.11615366,  3.37361758,  3.61311125, 3.83340143,  4.03437143,  4.21630292,  4.37965332,  4.52478904, 4.6520699 ,  4.76228069,  4.85624163]])},
+    3: {'LEFT': np.array([[6.44350288, 6.38496457, 6.3268314 , 6.26828708, 6.20842104, 6.14660654, 6.08149482, 6.01104935, 5.93344345, 5.84729593, 5.75090715, 5.64221771, 5.52004478],
+                          [5.34350288, 5.08236728, 4.83306691, 4.59770516, 4.37817011, 4.17548834, 3.98961371, 3.82006955, 3.66624632, 3.52766485, 3.40381644, 3.29377469, 3.19667909]]),
+        'RIGHT': np.array([[6.44350288, 6.15704261, 5.88384634, 5.62638242, 5.38688875, 5.16659857, 4.96562857, 4.78369708, 4.62034668, 4.47521096, 4.3479301 , 4.23771931, 4.14375837],
+                           [5.34350288, 5.31028923, 5.27605197, 5.23960982, 5.19970241, 5.15549632, 5.10547996, 5.04742182, 4.97934309, 4.89974981, 4.80679349, 4.69827309, 4.57296549]])}
+}
 
 # Start-End points of each gate pair
-SE_point = {0: {'S': np.array([[ 4.15147186],
-       [-3.15147186]]), 'E': np.array([[ 5.84852814],
-       [-4.84852814]])}, 1: {'S': np.array([[14.15147186],
-       [-4.84852814]]), 'E': np.array([[15.84852814],
-       [-3.15147186]])}, 2: {'S': np.array([[15.84852814],
-       [ 3.15147186]]), 'E': np.array([[14.15147186],
-       [ 4.84852814]])}, 3: {'S': np.array([[5.84852814],
-       [4.84852814]]), 'E': np.array([[4.15147186],
-       [3.15147186]])}}
+SE_point = {
+    0: {'S': np.array([3.65649712,-2.65649712]),
+        'E_LEFT': np.array([5.80332091,-3.57995522]),
+        'E_RIGHT': np.array([ 4.42703451,-4.95624163])},
+    1: {'S': np.array([13.65649712,-5.34350288]),
+        'E_LEFT': np.array([14.57995522,-3.19667909]),
+        'E_RIGHT': np.array([15.95624163,-4.57296549])},
+    2: {'S': np.array([16.34350288, 2.65649712]),
+        'E_LEFT': np.array([14.19667909, 3.57995522]),
+        'E_RIGHT': np.array([15.57296549, 4.95624163])},
+    3: {'S': np.array([6.34350288,5.34350288]),
+        'E_LEFT': np.array([5.42004478,3.19667909]),
+        'E_RIGHT': np.array([4.04375837,4.57296549])}
+}
 
 # Initial Line origin(0,0) -> First start point
 x_init = np.linspace(0, SE_point[0]['S'][0], 10)
@@ -99,11 +49,21 @@ y_init = np.linspace(0, SE_point[0]['S'][1], 10)
 initial_line = np.array(list(zip(x_init, y_init)))
 
 # Connect each start-end points of the gate pairs
-lines = dict()
-for i in range(4):
-    x_values = np.linspace(SE_point[(3+i)%4]['E'][0], SE_point[i]['S'][0], 20)
-    y_values = np.linspace(SE_point[(3+i)%4]['E'][1], SE_point[i]['S'][1], 20)
-    lines[i] = np.array(list(zip(x_values, y_values)))
+lines = {0:{}, 1:{}, 2:{}, 3:{}}
+
+for i in range(len(SE_point)):
+    S_next = SE_point[i]["S"]
+    # Left and Right end point
+    E_L = SE_point[(3+i)%len(SE_point)]["E_LEFT"]
+    E_R = SE_point[(3+i)%len(SE_point)]["E_RIGHT"]
+
+    x_line_L = np.linspace(E_L[0], S_next[0], 20)
+    y_line_L = np.linspace(E_L[1], S_next[1], 20)
+    lines[i]["LEFT"] = np.array(list(zip(x_line_L, y_line_L)))
+
+    x_line_R = np.linspace(E_R[0], S_next[0], 20)
+    y_line_R = np.linspace(E_R[1], S_next[1], 20)
+    lines[i]["RIGHT"] = np.array(list(zip(x_line_R, y_line_R)))
 
 # Route Planner class
 class RoutePlanner:
@@ -114,18 +74,26 @@ class RoutePlanner:
         self.SE_point = SE_point
         self.initial_line = initial_line
         self.lines = lines
-
+        
+        self.yaw_S = [-1*np.pi/4, 1*np.pi/4, 3*np.pi/4, -3*np.pi/4]
+        self.yaw_E = [[
+            np.arctan2(lines[i]["LEFT"][-1][1]-lines[i]["LEFT"][0][1], lines[i]["LEFT"][-1][0]-lines[i]["LEFT"][0][0]),\
+            np.arctan2(lines[i]["RIGHT"][-1][1]-lines[i]["RIGHT"][0][1], lines[i]["RIGHT"][-1][0]-lines[i]["RIGHT"][0][0])]
+            for i in range(len(SE_point))]
+    
+        self.yaw_initial = np.arctan2(SE_point[0]['S'][1], SE_point[0]['S'][0])
+        
         self.Z_tag = rospy.get_param("~Z_tag", 0.70)  # alwasys keep z as the height of tags 
         
         # Threshold for distance check
-        self.threshold_start = rospy.get_param("~threshold_start", 0.05)
-        self.threshold_curve = rospy.get_param("~threshold_curve", 0.07)
-        self.threshold_line = rospy.get_param("~threshold_line", 0.1)
+        self.threshold_start = rospy.get_param("~threshold_start", 0.10)
+        self.threshold_curve = rospy.get_param("~threshold_curve", 0.10)
+        self.threshold_line = rospy.get_param("~threshold_line", 0.10)
 
         self.current_pose = None
         self.prev_pose = None
         self.direction = "None"
-
+        
         # ROS interfaces
         self.pose_sub = rospy.Subscriber("/pose_topic", PoseStamped, self.pose_callback)   # subsribe the EKF solution
         self.direction_sub = rospy.Subscriber("/goal", String, self.direction_callback)
@@ -151,12 +119,20 @@ class RoutePlanner:
         dz = p1.z - p2.z
         return math.sqrt(dx*dx + dy*dy + dz*dz)
    
+    def target_yaw(self, target_x, target_y):
+        dx = target_x - self.current_waypoint.pose.position.x
+        dy = target_y - self.current_waypoint.pose.position.y
+        yaw = math.atan2(dy, dx)
+        return yaw
+    
     def generate_initial(self, idx):
         # Initial line to get the first gate pair from the origin
         x = self.initial_line[idx][0]
         y = self.initial_line[idx][1]
         z = self.Z_tag
-
+        yaw = self.yaw_initial
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -164,6 +140,7 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def generate_curve(self, name, idx, direction):
@@ -171,7 +148,9 @@ class RoutePlanner:
         x = self.curves[name][direction][0][idx]
         y = self.curves[name][direction][1][idx]
         z = self.Z_tag
-
+        yaw = self.target_yaw(x, y)
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -179,14 +158,20 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
-    def generate_line(self, name, idx):
+    def generate_line(self, name, idx, direction):
         # Line for connects the gate pairs e.g. 0th -> 1st
-        x = self.lines[name][idx][0]
-        y = self.lines[name][idx][1]
+        x = self.lines[name][direction][idx][0]
+        y = self.lines[name][direction][idx][1]
         z = self.Z_tag
-
+        if (direction == "LEFT"):
+            yaw = self.yaw_E[name][0]
+        if (direction == "RIGHT"):
+            yaw = self.yaw_E[name][1]
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -194,13 +179,23 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
     
-    def generate_SE(self, type,  name):
+    def generate_SE(self, type, name, direction):
+        if type == "E":
+            type = type + f"_{direction}"
         x = self.SE_point[name][type][0]
         y = self.SE_point[name][type][1]
         z = self.Z_tag
-
+        if type=="S":
+            yaw = self.yaw_S[name]
+        if type == "E_LEFT":
+            yaw = self.yaw_E[name][0]
+        if type == "E_RIGHT":
+            yaw = self.yaw_E[name][1]
+        quat = quaternion_from_euler(0,0,yaw)
+        
         wp = PoseStamped()
         wp.header.stamp = rospy.Time.now()
         wp.header.frame_id = "odom"
@@ -208,13 +203,14 @@ class RoutePlanner:
         wp.pose.position.x = x
         wp.pose.position.y = y
         wp.pose.position.z = z
+        wp.pose.orientation = Quaternion(*quat)
         return wp
 
     def run(self):
         rate = rospy.Rate(20)
         self.current_waypoint = None
         self.mode = "initialize"
-        self.direction = "LEFT"
+        self.direction = "None"
         self.name = 0
 
         rospy.loginfo("[Planner] Route Planner has intialized ")
@@ -233,7 +229,7 @@ class RoutePlanner:
                 # Check distance
                 dist = self.compute_distance(self.current_pose.pose.position, self.current_waypoint.pose.position)
 
-                rospy.loginfo_throttle(1.0, f"[Planner] Sending pose : x={self.current_pose.pose.position.x:.2f} y={self.current_pose.pose.position.y:.2f} z={self.current_pose.pose.position.z:.2f}")
+                rospy.loginfo_throttle(1.0, f"[Planner] Sending pose {self.mode}: x={self.current_pose.pose.position.x:.2f} y={self.current_pose.pose.position.y:.2f} z={self.current_pose.pose.position.z:.2f}")
                 rospy.loginfo_throttle(1.0, f"[Planner] Sending waypoint : x={self.current_waypoint.pose.position.x:.2f} y={self.current_waypoint.pose.position.y:.2f} z={self.current_waypoint.pose.position.z}")
                 rospy.loginfo_throttle(1.0, f"[Planner] Current distance : {dist:.2f}")
                 
@@ -252,7 +248,7 @@ class RoutePlanner:
 
                     # waiting for the QR code answer on S
                     if self.mode == "S" and self.direction == "None":
-                        rospy.loginfo_throttle(1.0, "[Planner] Waiting for the direction ...")
+                        rospy.loginfo_throttle(0.5, "[Planner] Waiting for the direction ...")
                     else:
                         self.advance_route()
                         self.current_waypoint = self.select_waypoint(self.name, self.idx, self.direction)
@@ -262,11 +258,11 @@ class RoutePlanner:
 
     def select_waypoint(self, name, idx, direction):
         if self.mode == "line":
-            return self.generate_line(name, idx)
+            return self.generate_line(name, idx, direction)
         elif self.mode == "S":
-            return self.generate_SE("S",  name)
+            return self.generate_SE("S", name, direction)
         elif self.mode == "E":
-            return self.generate_SE("E",  name)
+            return self.generate_SE("E", name, direction)
         elif self.mode == "curve":
             return self.generate_curve(name, idx, direction)
         elif self.mode == "initialize":
@@ -279,11 +275,12 @@ class RoutePlanner:
         # Find the next state of the FSM
         if self.mode == "line":
             # Follow the line or go to the start point state
-            if self.idx < len(self.initial_line)-1:
+            if self.idx < len(self.lines[0])-1:
                 self.idx +=1
             else:
                 self.idx = 0
                 self.mode = "S"
+                self.direction = "None"
         elif self.mode == "S":
             # Pass the gate along the curve
             self.idx = 0
@@ -294,7 +291,6 @@ class RoutePlanner:
             self.idx = 0
             self.name = (self.name + 1) % 4
             self.mode = "line"
-            self.direction = "None"
         elif self.mode == "curve":
             # Followed the curve, change to the end point state
             if self.idx < curves[self.name]["LEFT"].shape[1]-1:
@@ -319,4 +315,3 @@ class RoutePlanner:
 if __name__ == '__main__':
     RoutePlanner(curves, SE_point, initial_line, lines)
     rospy.spin()
-

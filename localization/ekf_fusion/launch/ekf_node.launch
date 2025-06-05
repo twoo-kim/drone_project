@@ -14,9 +14,13 @@
     <remap from="/tag_pose" to="$(arg tag_topic)"/>
     <remap from="/keypoints" to="$(arg keypoint_topic)"/>
 
-    <param name="ekf/process_covariance"      value="0.01" />
+    <param name="ekf/acc_covariance"          value="0.01" />
+    <param name="ekf/ang_covariance"          value="0.01" />
+    <param name="ekf/acc_bias_covariance"     value="0.001" />
+    <param name="ekf/ang_bias_covariance"     value="0.001" />
+
     <param name="ekf/orb_covariance"          value="0.05" />
-    <param name="ekf/tag_covariance"          value="0.01" />
+    <param name="ekf/tag_covariance"          value="0.10" />
 
     <param name="ekf/orb_refactor_threshold"  value="1.5" />
   </node>
