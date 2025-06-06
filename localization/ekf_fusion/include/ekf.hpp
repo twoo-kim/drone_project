@@ -30,9 +30,6 @@ public:
     struct EKFState getState(void);
 
 private:
-    // Update state
-    void updateState(const Eigen::Vector3d& lin, const Eigen::Vector3d& ang, double dt);
-
     // State vector and Covariance for estimation model
     struct EKFState state_;
     Eigen::Matrix<double, 15, 15> P_;

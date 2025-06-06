@@ -51,9 +51,8 @@ class GoalSelector:
 
     def gptCallback(self, msg):
         ## Prompt design ##
-        prompt = f"For the following question, return the key, LEFT or RIGHT that corresponds to the correct answer. \
-                Reply with only the answer — no explanation, no punctuation, no extra text. \
-                Question: {msg.data}"
+        prompt = f"For the following question, return the LEFT or RIGHT that corresponds to the answer.\
+            Reply only the answer — no explanation, no extra text. Assume Tag ID X = X. Use python. {msg.data} {msg.data}"
 
         ## GPT answer ##
         if (self.current_gate not in self.questions):

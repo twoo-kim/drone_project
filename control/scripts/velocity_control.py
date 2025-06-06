@@ -72,13 +72,10 @@ class OffboardController:
 
         while (self.current_pose.pose.position.z < self.Z_tag - 0.08):
             current_yaw = get_yaw_from_orientation(self.current_pose.pose.orientation)
-            error_x = 0 - self.current_pose.pose.position.x
             error_z = self.target_pose.pose.position.z - self.current_pose.pose.position.z
             error_yaw = yaw_error(0, current_yaw)
-            vx = K_P * error_x
             vz = K_P * error_z
             wz = K_P * error_yaw
-            self.cmd_velocity.twist.linear.x = vx
             self.cmd_velocity.twist.linear.z = vz
             self.cmd_velocity.twist.angular.z = wz
             self.local_vel_pub.publish(self.cmd_velocity)
@@ -93,10 +90,10 @@ class OffboardController:
         K_YAW_P = 0.5
         K_YAW_I = 0.1
 
-        MAX_VEL_XY = 1.0   # m/s
-        MAX_VEL_Z  = 0.5   # m/s
+        MAX_VEL_XY = 0.3   # m/s
+        MAX_VEL_Z  = 0.3   # m/s
         MAX_Z_INT = 1.0    # m/s
-        MAX_YAW_RATE = 0.7 # rad/s
+        MAX_YAW_RATE = 0.3 # rad/s
         MAX_YAW_INT = 1.0 # for I in yaw control
 
         # Error check

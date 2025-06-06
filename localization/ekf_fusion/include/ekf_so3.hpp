@@ -49,7 +49,6 @@ private:
     ros::Duration lost_time_;
 
     /* ORB relocalization */
-    bool is_orb_lost_;
     struct EKFState last_ekf_state_;
     Sophus::SE3d T_map_orb_;
 

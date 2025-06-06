@@ -1,21 +1,21 @@
 #include "ekf.hpp"
 
 // Mahalanobis distance threshold
-#define MAHAL_THRESHOLD 12.59
+#define MAHAL_THRESHOLD 16.81
 
 void EKF::init(ros::NodeHandle& nh) {
     nh_ = nh;
 
     // Covariance for model data
     double acc, ang, acc_bias, ang_bias;
-    nh_.param("ekf/acceleartion_covariance", acc, 0.1);
-    nh_.param("ekf/angular_velocity_covariance", ang, 0.1);
-    nh_.param("ekf/acc_bias_covariance", acc_bias, 0.1);
-    nh_.param("ekf/ang_bias_covariance", ang_bias, 0.1);
-    acc_cov_ = acc;
-    ang_cov_ = ang;
-    acc_bias_cov_ = acc_bias;
-    ang_bias_cov_ = ang_bias;
+    nh_.param("ekf/acceleartion_std", acc, 0.1);
+    nh_.param("ekf/angular_velocity_std", ang, 0.1);
+    nh_.param("ekf/acc_bias_std", acc_bias, 0.1);
+    nh_.param("ekf/ang_bias_std", ang_bias, 0.1);
+    acc_cov_ = acc*acc;
+    ang_cov_ = ang*ang;
+    acc_bias_cov_ = acc_bias*acc_bias;
+    ang_bias_cov_ = ang_bias*ang_bias;
 
     // Initialize state
     state_.p.setZero();
@@ -26,13 +26,21 @@ void EKF::init(ros::NodeHandle& nh) {
 
     // Initialize covariance
     P_.setIdentity();
-    P_ *= 0.01;
-    P_.block<3,3>(9,9) *= 0.1;  // accel bias
-    P_.block<3,3>(12,12) *= 0.1; // gyro bia
+    P_ *= 0.0001;
 }
 
-/* Update orientation */
-void EKF::updateState(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double dt) {
+// Hat function
+static Eigen::Matrix3d hat(const Eigen::Vector3d& w) {
+    Eigen::Matrix3d M;
+    M <<    0, -w.z(),   w.y(),
+         w.z(),      0, -w.x(),
+        -w.y(),  w.x(),      0;
+    return M;
+}
+
+/* Predict the new state */
+void EKF::predict(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double dt) {
+    /* 1. Update states */
     // Bias corrected inputs
     Eigen::Vector3d acc_corrected = acc - state_.b_acc;
     Eigen::Vector3d ang_corrected = ang - state_.b_ang;
@@ -44,58 +52,53 @@ void EKF::updateState(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, do
 
     // Acceleartion in world frame
     Eigen::Vector3d acc_w = state_.R * acc_corrected + gravity_;
+    std::cout << "acc: " << acc.x() << acc.y() << acc.z() << std::endl;
+    std::cout << "Acc: " << acc_w.x() << acc_w.y() << acc_w.z() << std::endl;
+    std::cout << "bias: " << state_.b_acc.x() << state_.b_acc.y() << state_.b_acc.z() << std::endl;
 
     // Update position and velocity
     state_.p += state_.v*dt + 0.5*acc_w*dt*dt;
     state_.v += acc_w*dt;
-}
 
+    /* 2. Jacobian for error state */
+    Eigen::Matrix<double,15,15> F = Eigen::Matrix<double,15,15>::Zero();
 
-/* Predict the new state */
-void EKF::predict(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double dt) {
-    /* 1. Update states */
-    updateState(acc, ang, dt);
+    // dp/dv = I
+    F.block<3,3>(0,3) = Eigen::Matrix3d::Identity();
 
-    /* 2. Jacobian for local linearization
+    // dv/dR = -R * hat(acc)
+    F.block<3,3>(3,6) = -state_.R.matrix() * hat(acc_corrected);
 
-             [dp/dp dp/dv dp/dR]
-        F =  [dv/dp dv/dv dv/dR]  numerator(k+1), denominator(k)
-             [dR/dp dR/dv dR/dR]
+    // dv/db_acc = -R
+    F.block<3,3>(3,9) = -state_.R.matrix();
 
-    */
-    Eigen::Matrix<double,15,15> F = Eigen::Matrix<double,15,15>::Identity();
+    // dR/dR = -hat
+    F.block<3,3>(6,6) = -hat(ang_corrected);
 
-    // dp/dv = I*dt
-    F.block<3,3>(0,3) = Eigen::Matrix3d::Identity()*dt;
+    // dR/db_ang = -I
+    F.block<3,3>(6,12) = -Eigen::Matrix3d::Identity();
 
-    // dp/dR = 0.5 * dRa/dR * dt^2
-    F.block<3,3>(0,6) = -0.5 * state_.R.matrix() * Sophus::SO3d::hat(acc - state_.b_acc) *dt*dt;
+    /* 3. Jacobian for noise */
+    Eigen::Matrix<double,15,12> Fi = Eigen::Matrix<double,15,12>::Zero();
+    Fi.block<3,3>(3,0) = -state_.R.matrix();
+    Fi.block<3,3>(6,3) = -Eigen::Matrix3d::Identity();
+    Fi.block<3,3>(9,6) = Eigen::Matrix3d::Identity();
+    Fi.block<3,3>(12,9) = Eigen::Matrix3d::Identity();
 
-    // dp/db_acc = -0.5 * dR/db_acc * dt^2
-    F.block<3,3>(0,9) = -0.5 * state_.R.matrix() * dt*dt;
+    /* 4. Process noise */
+    Eigen::Matrix<double,12,12> Qi = Eigen::Matrix<double,12,12>::Zero();
+    Qi.block<3,3>(0,0) = Eigen::Matrix3d::Identity() * acc_cov_;
+    Qi.block<3,3>(3,3) = Eigen::Matrix3d::Identity() * ang_cov_;
+    Qi.block<3,3>(6,6) = Eigen::Matrix3d::Identity() * acc_bias_cov_;
+    Qi.block<3,3>(9,9) = Eigen::Matrix3d::Identity() * ang_bias_cov_;
 
-    // dv/dR = dRa/dR * dt
-    F.block<3,3>(3,6) = -state_.R.matrix() * Sophus::SO3d::hat(acc - state_.b_acc) *dt;
+    /* 5. Discrete system Jacobian; Fx = I + F*dt and Q = Fi*Qi*Fi^T */
+    Eigen::Matrix<double,15,15> Fx = Eigen::Matrix<double,15,15>::Identity() + F * dt;
+    Eigen::Matrix<double,15,15>  Q = Fi * Qi * Fi.transpose() * dt;
 
-    // dv/db_acc = -R*dt
-    F.block<3,3>(3,9) = -state_.R.matrix() * dt;
-
-    // dR/dR = exp(dw)
-    F.block<3,3>(6,6) = Sophus::SO3d::exp(ang * dt).matrix();
-
-    // dR/db_ang ~ -R*dt (suppose small angle)
-    F.block<3,3>(6,12) = -state_.R.matrix() * dt;
-
-    /* 3. Process noise */
-    Eigen::Matrix<double,15,15> Q = Eigen::Matrix<double,15,15>::Zero();
-    Q.block<3,3>(3,3) = Eigen::Matrix3d::Identity() * acc_cov_;
-    Q.block<3,3>(6,6) = Eigen::Matrix3d::Identity() * ang_cov_;
-    Q.block<3,3>(9,9) = Eigen::Matrix3d::Identity() * acc_bias_cov_;
-    Q.block<3,3>(12,12) = Eigen::Matrix3d::Identity() * ang_bias_cov_;
-
-    /* 4. Predicted Covariance */
+    /* 6. Predicted Covariance */
     // P_k = FP_k-1 F^T + Q
-    P_ = F*P_*F.transpose() + Q;
+    P_ = Fx*P_*Fx.transpose() + Q;
 }
 
 /* Estimate the position using Kalman Filter inputs are measured value and measurement covariance */
@@ -129,6 +132,8 @@ void EKF::updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, 
     state_.p += dx.segment<3>(0);
     state_.v += dx.segment<3>(3);
     state_.R = state_.R * Sophus::SO3d::exp(dx.segment<3>(6));
+    state_.b_acc += dx.segment<3>(9);
+    state_.b_ang += dx.segment<3>(12);
 
     /* 5. Update Covariance */
     Eigen::Matrix<double,15,15> I = Eigen::Matrix<double,15,15>::Identity();

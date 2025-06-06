@@ -12,7 +12,6 @@ void EKFNode::init(ros::NodeHandle& nh) {
 
     // Initialize state
     prev_time_ = 0.0;
-    is_orb_lost_ = false;
 
     // FSM
     mode_ = FusionMode::FULL;
@@ -81,37 +80,38 @@ void EKFNode::orbCallback(const geometry_msgs::PoseStamped& p_orb) {
     bool is_orb_lost = (orb_time - last_valid_keypoint_time_) > lost_time_;
     
     // Fuse ORB pose when mode is FULL
-    if (mode_ != FusionMode::FULL) {
-        return;
-    }
+    if (mode_ != FusionMode::FULL) return;
     
     // Get pose and orientation
     Eigen::Vector3d p_meas(p_orb.pose.position.x, p_orb.pose.position.y, p_orb.pose.position.z);
     Eigen::Quaterniond q(p_orb.pose.orientation.w, p_orb.pose.orientation.x,
                          p_orb.pose.orientation.y, p_orb.pose.orientation.z);
     Sophus::SO3d R_meas(q);
+    Sophus::SE3d T_orb(R_meas, p_meas);
+
+    // EKF state
+    struct EKFState state = ekf_.getState();
+    Sophus::SE3d T_map(state.R, state.p);
 
     // Check if orb has lost its tracking before
     if (is_orb_lost) {
         // Compute offset from new ORB frame to the global frame
-        Sophus::SE3d T_orb_new(R_meas, p_meas);
-        Sophus::SE3d T_map_old(last_ekf_state_.R, last_ekf_state_.p);
-        T_map_orb_ = T_map_old * T_orb_new.inverse();
-
-        // Check error with the current value
-        struct EKFState state = ekf_.getState();
-        double pos_err = (p_meas - state.p).norm();
-        // Adjust covariance
-        double orb_std = std::max(0.05, pos_err);
-        orb_cov_ = orb_std*orb_std;
+        T_map_orb_ = T_map * T_orb.inverse();
+        last_ekf_state_ = state;
         return;
     }
 
     // Apply offset
-    Sophus::SE3d T_orb(R_meas, p_meas);
-    Sophus::SE3d T_map = T_map_orb_ * T_orb;
-    p_meas = T_map.translation();
-    R_meas = T_map.so3();
+    Sophus::SE3d T_mo = T_map_orb_ * T_orb;
+    p_meas = T_mo.translation();
+    R_meas = T_mo.so3();
+
+    // Check error with the current value
+    double pos_err = (p_meas - state.p).norm();
+
+    // Adjust covariance
+    double orb_std = std::max(0.05, 0.5*pos_err);
+    orb_cov_ = orb_std*orb_std;
 
     // Covariance matrix for ORB SLAM
     Eigen::Matrix<double, 6, 6> R_cov = Eigen::Matrix<double, 6, 6>::Identity();
@@ -133,7 +133,7 @@ void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {
     Eigen::Matrix<double, 6, 6> R_cov = Eigen::Matrix<double, 6, 6>::Identity();
     // z-value is easy to be changed, make covariance larger than x, y
     R_cov *= tag_cov_;
-    R_cov(2,2) *= 3.0;
+    R_cov(2,2) *= 10.0;
 
     ekf_.updatePose(p_meas, R_meas, R_cov);
 }
