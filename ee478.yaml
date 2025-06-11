@@ -7,8 +7,6 @@ windows:
       - cd ~/catkin_ws/
       - source devel/setup.bash
       - export PX4_DIR=/home/EE478/PX4-Autopilot
-      - export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:${PX4_DIR}:${PX4_DIR}/Tools/simulation/gazebo-classic/sitl_gazebo-classic
-      - source ${PX4_DIR}/Tools/simulation/gazebo-classic/setup_gazebo.bash ${PX4_DIR} ${PX4_DIR}/build/px4_sitl_default
     panes:
     - shell_command:
       - roscore
@@ -19,14 +17,15 @@ windows:
       - source /opt/ros/noetic/setup.bash
       - cd ~/catkin_ws/
       - source devel/setup.bash
-      - export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:${PX4_DIR}:${PX4_DIR}/Tools/simulation/gazebo-classic/sitl_gazebo-classic
       - export PX4_DIR=/home/EE478/PX4-Autopilot
       - sleep 3
-      - source ${PX4_DIR}/Tools/simulation/gazebo-classic/setup_gazebo.bash ${PX4_DIR} ${PX4_DIR}/build/px4_sitl_default
     panes:
-    # Initialize
+    # Initialize camera
     - shell_command:
-      - roslaunch ee478_px4_sim tag_spawn.launch
+      - roslaunch realsense2_camera rs_camera.launch
+    # Initialize mavros
+    - shell_command:
+      - roslaunch mavros px4.launch
     # Localization
     - shell_command:
       - roslaunch apriltag_ros continuous_detection.launch
@@ -35,8 +34,6 @@ windows:
     - shell_command:
       - roslaunch ekf_fusion ekf_node.launch
     # Goal selector
-    - shell_command:
-      - roslaunch qr_detector detector.launch
     - shell_command:
       - roslaunch gpt_api goal_selector.launch
     # Planner and Controller

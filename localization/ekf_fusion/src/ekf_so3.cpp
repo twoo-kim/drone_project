@@ -133,7 +133,7 @@ void EKFNode::tagCallback(const geometry_msgs::PoseStamped& p_tag) {
     Eigen::Matrix<double, 6, 6> R_cov = Eigen::Matrix<double, 6, 6>::Identity();
     // z-value is easy to be changed, make covariance larger than x, y
     R_cov *= tag_cov_;
-    R_cov(2,2) *= 10.0;
+    R_cov(2,2) *= 5.0;
 
     ekf_.updatePose(p_meas, R_meas, R_cov);
 }

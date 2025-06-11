@@ -40,7 +40,7 @@ static Eigen::Matrix3d hat(const Eigen::Vector3d& w) {
 
 /* Predict the new state */
 void EKF::predict(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double dt) {
-    /* 1. Update states */
+    /* 1. Update nominal states */
     // Bias corrected inputs
     Eigen::Vector3d acc_corrected = acc - state_.b_acc;
     Eigen::Vector3d ang_corrected = ang - state_.b_ang;
@@ -52,9 +52,6 @@ void EKF::predict(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double
 
     // Acceleartion in world frame
     Eigen::Vector3d acc_w = state_.R * acc_corrected + gravity_;
-    std::cout << "acc: " << acc.x() << acc.y() << acc.z() << std::endl;
-    std::cout << "Acc: " << acc_w.x() << acc_w.y() << acc_w.z() << std::endl;
-    std::cout << "bias: " << state_.b_acc.x() << state_.b_acc.y() << state_.b_acc.z() << std::endl;
 
     // Update position and velocity
     state_.p += state_.v*dt + 0.5*acc_w*dt*dt;
@@ -63,20 +60,11 @@ void EKF::predict(const Eigen::Vector3d& acc, const Eigen::Vector3d& ang, double
     /* 2. Jacobian for error state */
     Eigen::Matrix<double,15,15> F = Eigen::Matrix<double,15,15>::Zero();
 
-    // dp/dv = I
-    F.block<3,3>(0,3) = Eigen::Matrix3d::Identity();
-
-    // dv/dR = -R * hat(acc)
-    F.block<3,3>(3,6) = -state_.R.matrix() * hat(acc_corrected);
-
-    // dv/db_acc = -R
-    F.block<3,3>(3,9) = -state_.R.matrix();
-
-    // dR/dR = -hat
-    F.block<3,3>(6,6) = -hat(ang_corrected);
-
-    // dR/db_ang = -I
-    F.block<3,3>(6,12) = -Eigen::Matrix3d::Identity();
+    F.block<3,3>(0,3) = Eigen::Matrix3d::Identity();                // dp/dv = I
+    F.block<3,3>(3,6) = -state_.R.matrix() * hat(acc_corrected);    // dv/dR = -R * hat(acc)
+    F.block<3,3>(3,9) = -state_.R.matrix();                         // dv/db_acc = -R
+    F.block<3,3>(6,6) = -hat(ang_corrected);                        // dR/dR = -hat
+    F.block<3,3>(6,12) = -Eigen::Matrix3d::Identity();              // dR/db_ang = -I
 
     /* 3. Jacobian for noise */
     Eigen::Matrix<double,15,12> Fi = Eigen::Matrix<double,15,12>::Zero();
@@ -116,7 +104,7 @@ void EKF::updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, 
     H.block<3,3>(0,0) = Eigen::Matrix3d::Identity();
     H.block<3,3>(3,6) = Eigen::Matrix3d::Identity();
 
-    /* 3. Kalman filter */
+    /* 3. Kalman gain */
     Eigen::Matrix<double,6,6> S = H*P_*H.transpose() + R_cov;
     Eigen::Matrix<double,15,6> K = P_*H.transpose()*S.inverse();
     // Outlier check; Mahalanobis distance with 95% confidence chi^2 = 12.59
@@ -138,6 +126,11 @@ void EKF::updatePose(const Eigen::Vector3d& p_meas, const Sophus::SO3d& R_meas, 
     /* 5. Update Covariance */
     Eigen::Matrix<double,15,15> I = Eigen::Matrix<double,15,15>::Identity();
     P_ = (I - K * H) * P_ * (I - K * H).transpose() + (K * R_cov * K.transpose());
+
+    /* 6. Reset */
+    Eigen::Matrix<double,15,15> G = Eigen::Matrix<double,15,15>::Identity();
+    G.block<3,3>(6,6) = Eigen::Matrix3d::Identity() - 0.5*hat(dx.segment<3>(6));
+    P_ = G * P_ * G.transpose();
 }
 
 struct EKFState EKF::getState(void) {

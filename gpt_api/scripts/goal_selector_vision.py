@@ -20,13 +20,15 @@ class GoalSelector:
         self.pub = rospy.Publisher("/goal", String, queue_size=1)
         self.qr_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.gptCallback)
         self.gate_sub = rospy.Subscriber("/gate_passed", Bool, self.gateCallback, queue_size=1)
-
+        self.start_sub = rospy.Subscriber("/start_reacjed", Bool, self.startCallback, queue_size=1)
+        
         # GPT service
         rospy.wait_for_service('ask_image_gpt')
         self.ask_gpt = rospy.ServiceProxy('ask_image_gpt', GPTImageQuery)
 
         # Current state
         self.current_gate = 0
+        self.start_reached = False
         self.direction = String()
         self.questions = dict()
 
@@ -49,6 +51,12 @@ class GoalSelector:
         self.publish_direction
 
     def gptCallback(self, msg):
+        # Check if the start point of the gate has reached
+        if (not self.start_reached):
+            return
+        else:
+            self.start_reached = False
+        
         num_gate = 3
         ## Prompt design ##
         prompt = f"There are problem sets you have to answer in monitor. Give me an answer between 2 options"
@@ -87,6 +95,10 @@ class GoalSelector:
         if (msg.data):
             self.current_gate += 1
         return
+    
+    def startCallback(self, msg):
+        if (msg.data):
+            self.start_reached = msg.data
                 
 # Run goal selector node
 if __name__ == "__main__":

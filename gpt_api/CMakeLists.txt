@@ -17,11 +17,12 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   GPTAsk.srv
+  GPTImageQuery.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-  DEPENDENCIES
+  DEPENDENCIES std_msgs sensor_msgs
 )
 
 ## The catkin_package macro generates cmake config files for your package
@@ -34,5 +35,6 @@ catkin_package(
 catkin_install_python(PROGRAMS
   scripts/goal_selector.py
   scripts/gpt_server.py
+  scripts/gpt_vision_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
